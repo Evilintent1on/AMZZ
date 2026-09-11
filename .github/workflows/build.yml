@@ -22,13 +22,15 @@ jobs:
         run: |
           brew install ldid dpkg make
 
-      - name: 自动修正源码目录
+      # 这次把所有需要的文件夹全建好，并把源码强行塞进去
+      - name: 自动修正源码目录（修复找不到文件的报错）
         run: |
-          mkdir -p Sources/Hooks layout
+          mkdir -p Sources/Core Sources/Hooks Sources/ layout
+          cp *.m *.h *.inc Sources/Core/ 2>/dev/null || true
           cp *.m *.h *.inc Sources/Hooks/ 2>/dev/null || true
+          cp *.m *.h *.inc Sources/ 2>/dev/null || true
           cp *.plist layout/ 2>/dev/null || true
 
-      # 就是这一步，把旧的 SDK 版本自动替换掉
       - name: 自动修正 Makefile 中的 SDK 版本
         run: |
           sed -i '' 's/16.5/latest/g' Makefile || true
