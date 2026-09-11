@@ -1,55 +1,41 @@
-name: Build DEB
+name: Build Tweak
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
+
     steps:
-      - name: 拉取源码
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: 安装基础依赖与 ldid
+      - name: Setup Theos
         run: |
-          sudo apt-get update
-          sudo apt-get install -y fakeroot dpkg-dev git wget clang
-          wget https://github.com/ProcursusTeam/ldid/releases/download/v2.1.5-procursus7/ldid_linux_x86_64
-          chmod +x ldid_linux_x86_64
-          sudo mv ldid_linux_x86_64 /usr/local/bin/ldid
+          export THEOS=$HOME/theos
+          git clone --recursive https://github.com/theos/theos.git $THEOS
+          echo "THEOS=$THEOS" >> $GITHUB_ENV
 
-      - name: 安装 Theos 环境
+      - name: Install Dependencies
         run: |
-          git clone --recursive https://github.com/theos/theos.git $HOME/theos
-          echo "THEOS=$HOME/theos" >> $GITHUB_ENV
-          echo "$HOME/theos/bin" >> $GITHUB_PATH
+          brew install ldid dpkg make
 
-      - name: 下载 iOS SDK
+      # 关键补充：自动整理目录结构，解决找不到源码文件的问题
+      - name: 自动修正源码目录
         run: |
-          rm -rf $HOME/theos/sdks
-          git clone --depth 1 https://github.com/theos/sdks.git $HOME/theos/sdks
-
-      - name: 安装 Linux 工具链
-        run: |
-          rm -rf $HOME/theos/toolchain
-          git clone --depth 1 https://github.com/theos/toolchain.git $HOME/theos/toolchain
-
-      - name: 自动修正源码目录结构（你不用手动移文件）
-        run: |
-          mkdir -p Sources/Hooks
+          mkdir -p Sources/Hooks layout
           cp *.m *.h *.inc Sources/Hooks/ 2>/dev/null || true
-          mkdir -p layout
           cp *.plist layout/ 2>/dev/null || true
 
-      - name: 开始编译插件
+      - name: Build Tweak
         run: |
           make clean
           make package
 
-      - name: 上传 deb 文件
+      - name: Upload DEB
         uses: actions/upload-artifact@v4
         with:
-          name: 编译出的插件deb
-          path: ./packages/*.deb
+          name: amzz-deb
+          path: packages/*.deb
