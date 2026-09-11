@@ -22,12 +22,13 @@ jobs:
         run: |
           brew install ldid dpkg make
 
-      # 这次把所有需要的文件夹全建好，并把源码强行塞进去
-      - name: 自动修正源码目录（修复找不到文件的报错）
+      # 终极地毯式覆盖，把所有文件塞进所有可能的文件夹，它要哪个就给哪个
+      - name: 自动修正源码目录（终极覆盖）
         run: |
-          mkdir -p Sources/Core Sources/Hooks Sources/ layout
+          mkdir -p Sources/Core Sources/Hooks Sources/UI Sources/ layout
           cp *.m *.h *.inc Sources/Core/ 2>/dev/null || true
           cp *.m *.h *.inc Sources/Hooks/ 2>/dev/null || true
+          cp *.m *.h *.inc Sources/UI/ 2>/dev/null || true
           cp *.m *.h *.inc Sources/ 2>/dev/null || true
           cp *.plist layout/ 2>/dev/null || true
 
@@ -44,5 +45,5 @@ jobs:
       - name: Upload DEB
         uses: actions/upload-artifact@v4
         with:
-          name: wczz-deb
+          name: awzz-deb
           path: packages/*.deb
