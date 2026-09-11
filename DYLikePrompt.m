@@ -4,7 +4,6 @@ static __weak DYLikePrompt *DYLikeVisiblePrompt;
 
 @interface DYLikePrompt ()
 @property(nonatomic, strong) UIView *panel;
-@property(nonatomic, strong) UIStackView *buttons;
 @property(nonatomic, strong) UILabel *heading;
 @property(nonatomic, copy) void (^decision)(BOOL);
 @property(nonatomic) BOOL finishing;
@@ -55,24 +54,6 @@ static __weak DYLikePrompt *DYLikeVisiblePrompt;
     return label;
 }
 
-- (UIButton *)buttonWithTitle:(NSString *)title primary:(BOOL)primary accent:(UIColor *)accent {
-    UIButton *button = [UIButton buttonWithType:UIButtonTypeSystem];
-    [button setTitle:title forState:UIControlStateNormal];
-    button.titleLabel.font = [[UIFontMetrics metricsForTextStyle:UIFontTextStyleBody]
-        scaledFontForFont:[UIFont systemFontOfSize:15 weight:UIFontWeightMedium] maximumPointSize:22];
-    button.titleLabel.adjustsFontForContentSizeCategory = YES;
-    button.titleLabel.adjustsFontSizeToFitWidth = YES;
-    button.titleLabel.minimumScaleFactor = 0.8;
-    button.contentEdgeInsets = UIEdgeInsetsMake(11, 8, 11, 8);
-    button.layer.cornerRadius = 13;
-    button.layer.cornerCurve = kCACornerCurveContinuous;
-    button.backgroundColor = primary ? accent : UIColor.tertiarySystemFillColor;
-    [button setTitleColor:primary ? UIColor.whiteColor : UIColor.labelColor forState:UIControlStateNormal];
-    [button.heightAnchor constraintGreaterThanOrEqualToConstant:42].active = YES;
-    [button addTarget:self action:primary ? @selector(confirm) : @selector(cancel) forControlEvents:UIControlEventTouchUpInside];
-    return button;
-}
-
 - (void)configureAction:(DYLikeActionType)action intent:(DYLikeIntent)intent name:(NSString *)name isComment:(BOOL)isComment {
     self.accessibilityViewIsModal = YES;
     UIControl *scrim = [[UIControl alloc] initWithFrame:self.bounds];
@@ -84,7 +65,6 @@ static __weak DYLikePrompt *DYLikeVisiblePrompt;
 
     NSString *verb = action == DYLikeActionLike ? @"点赞" : action == DYLikeActionFavorite ? @"收藏" : @"关注";
     NSString *title = [NSString stringWithFormat:@"是否确认%@", verb];
-    // 确认按钮改为“确认”
     NSString *confirmTitle = @"确认";
     if (intent == DYLikeIntentRemove) {
         title = [NSString stringWithFormat:@"是否取消%@", verb];
@@ -97,78 +77,116 @@ static __weak DYLikePrompt *DYLikeVisiblePrompt;
     self.panel = [UIView new];
     self.panel.translatesAutoresizingMaskIntoConstraints = NO;
     self.panel.backgroundColor = UIColor.whiteColor;
-    self.panel.layer.cornerRadius = 24;
+    self.panel.layer.cornerRadius = 16;
     self.panel.layer.cornerCurve = kCACornerCurveContinuous;
     self.panel.clipsToBounds = YES;
     [self addSubview:self.panel];
 
-    UIScrollView *scroll = [UIScrollView new];
-    scroll.translatesAutoresizingMaskIntoConstraints = NO;
-    scroll.alwaysBounceVertical = NO;
-    [self.panel addSubview:scroll];
-
+    // 上半部分内容容器
     UIStackView *content = [UIStackView new];
     content.axis = UILayoutConstraintAxisVertical;
-    content.spacing = 8;
+    content.spacing = 6;
     content.alignment = UIStackViewAlignmentFill;
     content.translatesAutoresizingMaskIntoConstraints = NO;
-    [scroll addSubview:content];
+    [self.panel addSubview:content];
 
-    UILabel *amzzLabel = [self labelWithText:@"AMZZ" size:19 weight:UIFontWeightBold];
+    UILabel *amzzLabel = [self labelWithText:@"AMZZ" size:17 weight:UIFontWeightBold];
     [content addArrangedSubview:amzzLabel];
 
-    self.heading = [self labelWithText:title size:15 weight:UIFontWeightRegular];
+    self.heading = [self labelWithText:title size:14 weight:UIFontWeightRegular];
     self.heading.accessibilityTraits |= UIAccessibilityTraitHeader;
     [content addArrangedSubview:self.heading];
 
     if (name.length) {
-        UILabel *nameLabel = [self labelWithText:name size:14 weight:UIFontWeightMedium];
+        UILabel *nameLabel = [self labelWithText:name size:13 weight:UIFontWeightMedium];
         nameLabel.numberOfLines = 2;
         nameLabel.lineBreakMode = NSLineBreakByTruncatingTail;
         [content addArrangedSubview:nameLabel];
     }
 
-    self.buttons = [[UIStackView alloc] initWithArrangedSubviews:@[
-        [self buttonWithTitle:@"取消" primary:NO accent:DYLikeAccent(action)],
-        [self buttonWithTitle:confirmTitle primary:YES accent:DYLikeAccent(action)]
-    ]];
-    self.buttons.translatesAutoresizingMaskIntoConstraints = NO;
-    self.buttons.spacing = 10;
-    self.buttons.distribution = UIStackViewDistributionFillEqually;
-    [self.panel addSubview:self.buttons];
-    [self updateButtonAxis];
+    // 横向主分割线（浅灰色）
+    UIView *horizontalDivider = [UIView new];
+    horizontalDivider.translatesAutoresizingMaskIntoConstraints = NO;
+    horizontalDivider.backgroundColor = [UIColor colorWithWhite:0 alpha:0.1];
+    [self.panel addSubview:horizontalDivider];
 
-    // 将弹窗目标宽度调小至 295
-    NSLayoutConstraint *preferredWidth = [self.panel.widthAnchor constraintEqualToConstant:295];
+    // 底部按钮区域（无背景色）
+    UIView *buttonContainer = [UIView new];
+    buttonContainer.translatesAutoresizingMaskIntoConstraints = NO;
+    [self.panel addSubview:buttonContainer];
+
+    // “取消”按钮（纯黑字体，无背景）
+    UIButton *cancelButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    [cancelButton setTitle:@"取消" forState:UIControlStateNormal];
+    [cancelButton setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
+    cancelButton.backgroundColor = [UIColor clearColor];
+    cancelButton.titleLabel.font = [UIFont systemFontOfSize:16 weight:UIFontWeightRegular];
+    cancelButton.translatesAutoresizingMaskIntoConstraints = NO;
+    [cancelButton addTarget:self action:@selector(cancel) forControlEvents:UIControlEventTouchUpInside];
+    [buttonContainer addSubview:cancelButton];
+
+    // 纵向分割线
+    UIView *verticalDivider = [UIView new];
+    verticalDivider.translatesAutoresizingMaskIntoConstraints = NO;
+    verticalDivider.backgroundColor = [UIColor colorWithWhite:0 alpha:0.1];
+    [buttonContainer addSubview:verticalDivider];
+
+    // “确认”按钮（参照图4统一纯黑字体，无背景）
+    UIButton *confirmButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    [confirmButton setTitle:confirmTitle forState:UIControlStateNormal];
+    [confirmButton setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
+    confirmButton.backgroundColor = [UIColor clearColor];
+    confirmButton.titleLabel.font = [UIFont systemFontOfSize:16 weight:UIFontWeightMedium];
+    confirmButton.translatesAutoresizingMaskIntoConstraints = NO;
+    [confirmButton addTarget:self action:@selector(confirm) forControlEvents:UIControlEventTouchUpInside];
+    [buttonContainer addSubview:confirmButton];
+
+    // 布局约束
+    NSLayoutConstraint *preferredWidth = [self.panel.widthAnchor constraintEqualToConstant:270];
     preferredWidth.priority = 999;
-    NSLayoutConstraint *contentHeight = [scroll.heightAnchor constraintEqualToAnchor:scroll.contentLayoutGuide.heightAnchor];
-    contentHeight.priority = 750;
+
     [NSLayoutConstraint activateConstraints:@[
         preferredWidth,
-        [self.panel.widthAnchor constraintLessThanOrEqualToAnchor:self.safeAreaLayoutGuide.widthAnchor constant:-44],
+        [self.panel.widthAnchor constraintLessThanOrEqualToAnchor:self.safeAreaLayoutGuide.widthAnchor constant:-50],
         [self.panel.centerXAnchor constraintEqualToAnchor:self.safeAreaLayoutGuide.centerXAnchor],
         [self.panel.centerYAnchor constraintEqualToAnchor:self.safeAreaLayoutGuide.centerYAnchor],
-        [self.panel.topAnchor constraintGreaterThanOrEqualToAnchor:self.safeAreaLayoutGuide.topAnchor constant:12],
-        [self.panel.bottomAnchor constraintLessThanOrEqualToAnchor:self.safeAreaLayoutGuide.bottomAnchor constant:-12],
-        [scroll.topAnchor constraintEqualToAnchor:self.panel.topAnchor constant:20],
-        [scroll.leadingAnchor constraintEqualToAnchor:self.panel.leadingAnchor constant:18],
-        [scroll.trailingAnchor constraintEqualToAnchor:self.panel.trailingAnchor constant:-18],
-        [scroll.heightAnchor constraintGreaterThanOrEqualToConstant:32], contentHeight,
-        [content.topAnchor constraintEqualToAnchor:scroll.contentLayoutGuide.topAnchor],
-        [content.bottomAnchor constraintEqualToAnchor:scroll.contentLayoutGuide.bottomAnchor],
-        [content.leadingAnchor constraintEqualToAnchor:scroll.contentLayoutGuide.leadingAnchor],
-        [content.trailingAnchor constraintEqualToAnchor:scroll.contentLayoutGuide.trailingAnchor],
-        [content.widthAnchor constraintEqualToAnchor:scroll.frameLayoutGuide.widthAnchor],
-        [self.buttons.topAnchor constraintEqualToAnchor:scroll.bottomAnchor constant:18],
-        [self.buttons.leadingAnchor constraintEqualToAnchor:self.panel.leadingAnchor constant:18],
-        [self.buttons.trailingAnchor constraintEqualToAnchor:self.panel.trailingAnchor constant:-18],
-        [self.buttons.bottomAnchor constraintEqualToAnchor:self.panel.bottomAnchor constant:-18]
-    ]];
-}
 
-- (void)updateButtonAxis {
-    self.buttons.axis = UIContentSizeCategoryIsAccessibilityCategory(self.traitCollection.preferredContentSizeCategory) ?
-        UILayoutConstraintAxisVertical : UILayoutConstraintAxisHorizontal;
+        // 内容区域约束
+        [content.topAnchor constraintEqualToAnchor:self.panel.topAnchor constant:20],
+        [content.leadingAnchor constraintEqualToAnchor:self.panel.leadingAnchor constant:16],
+        [content.trailingAnchor constraintEqualToAnchor:self.panel.trailingAnchor constant:-16],
+
+        // 横向分割线
+        [horizontalDivider.topAnchor constraintEqualToAnchor:content.bottomAnchor constant:18],
+        [horizontalDivider.leadingAnchor constraintEqualToAnchor:self.panel.leadingAnchor],
+        [horizontalDivider.trailingAnchor constraintEqualToAnchor:self.panel.trailingAnchor],
+        [horizontalDivider.heightAnchor constraintEqualToConstant:0.5],
+
+        // 按钮容器
+        [buttonContainer.topAnchor constraintEqualToAnchor:horizontalDivider.bottomAnchor],
+        [buttonContainer.leadingAnchor constraintEqualToAnchor:self.panel.leadingAnchor],
+        [buttonContainer.trailingAnchor constraintEqualToAnchor:self.panel.trailingAnchor],
+        [buttonContainer.bottomAnchor constraintEqualToAnchor:self.panel.bottomAnchor],
+        [buttonContainer.heightAnchor constraintEqualToConstant:46],
+
+        // 取消按钮
+        [cancelButton.leadingAnchor constraintEqualToAnchor:buttonContainer.leadingAnchor],
+        [cancelButton.topAnchor constraintEqualToAnchor:buttonContainer.topAnchor],
+        [cancelButton.bottomAnchor constraintEqualToAnchor:buttonContainer.bottomAnchor],
+        [cancelButton.trailingAnchor constraintEqualToAnchor:verticalDivider.leadingAnchor],
+
+        // 纵向分割线
+        [verticalDivider.centerXAnchor constraintEqualToAnchor:buttonContainer.centerXAnchor],
+        [verticalDivider.topAnchor constraintEqualToAnchor:buttonContainer.topAnchor],
+        [verticalDivider.bottomAnchor constraintEqualToAnchor:buttonContainer.bottomAnchor],
+        [verticalDivider.widthAnchor constraintEqualToConstant:0.5],
+
+        // 确认按钮
+        [confirmButton.leadingAnchor constraintEqualToAnchor:verticalDivider.trailingAnchor],
+        [confirmButton.topAnchor constraintEqualToAnchor:buttonContainer.topAnchor],
+        [confirmButton.bottomAnchor constraintEqualToAnchor:buttonContainer.bottomAnchor],
+        [confirmButton.trailingAnchor constraintEqualToAnchor:buttonContainer.trailingAnchor]
+    ]];
 }
 
 - (void)updateTheme {
@@ -179,7 +197,6 @@ static __weak DYLikePrompt *DYLikeVisiblePrompt;
 - (void)traitCollectionDidChange:(UITraitCollection *)previousTraitCollection {
     [super traitCollectionDidChange:previousTraitCollection];
     [self updateTheme];
-    [self updateButtonAxis];
 }
 
 - (void)confirm { [self finish:YES]; }
@@ -201,7 +218,7 @@ static __weak DYLikePrompt *DYLikeVisiblePrompt;
 - (void)finish:(BOOL)confirmed {
     if (self.finishing) return;
     self.finishing = YES;
-    self.buttons.userInteractionEnabled = NO;
+    self.panel.userInteractionEnabled = NO;
     [NSNotificationCenter.defaultCenter removeObserver:self];
     void (^decision)(BOOL) = self.decision;
     self.decision = nil;
