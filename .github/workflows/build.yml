@@ -15,7 +15,7 @@ jobs:
       - name: 安装基础依赖与 ldid
         run: |
           sudo apt-get update
-          sudo apt-get install -y fakeroot dpkg-dev git wget
+          sudo apt-get install -y fakeroot dpkg-dev git wget clang
           wget https://github.com/ProcursusTeam/ldid/releases/download/v2.1.5-procursus7/ldid_linux_x86_64
           chmod +x ldid_linux_x86_64
           sudo mv ldid_linux_x86_64 /usr/local/bin/ldid
@@ -30,6 +30,18 @@ jobs:
         run: |
           rm -rf $HOME/theos/sdks
           git clone --depth 1 https://github.com/theos/sdks.git $HOME/theos/sdks
+
+      - name: 安装 Linux 工具链
+        run: |
+          rm -rf $HOME/theos/toolchain
+          git clone --depth 1 https://github.com/theos/toolchain.git $HOME/theos/toolchain
+
+      - name: 自动修正源码目录结构（你不用手动移文件）
+        run: |
+          mkdir -p Sources/Hooks
+          cp *.m *.h *.inc Sources/Hooks/ 2>/dev/null || true
+          mkdir -p layout
+          cp *.plist layout/ 2>/dev/null || true
 
       - name: 开始编译插件
         run: |
