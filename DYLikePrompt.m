@@ -141,33 +141,36 @@ static __weak DYLikePrompt *DYLikeVisiblePrompt;
     [confirmButton addTarget:self action:@selector(confirm) forControlEvents:UIControlEventTouchUpInside];
     [buttonContainer addSubview:confirmButton];
 
-    // 布局约束：将宽度固定值修改为 275pt
-    NSLayoutConstraint *preferredWidth = [self.panel.widthAnchor constraintEqualToConstant:275];
+    // 布局约束：严格设定宽度 280pt，高度 150pt
+    NSLayoutConstraint *preferredWidth = [self.panel.widthAnchor constraintEqualToConstant:280];
     preferredWidth.priority = 999;
+
+    NSLayoutConstraint *preferredHeight = [self.panel.heightAnchor constraintEqualToConstant:150];
+    preferredHeight.priority = 999;
 
     [NSLayoutConstraint activateConstraints:@[
         preferredWidth,
-        [self.panel.widthAnchor constraintLessThanOrEqualToAnchor:self.safeAreaLayoutGuide.widthAnchor constant:-50],
+        preferredHeight,
+        [self.panel.widthAnchor constraintLessThanOrEqualToAnchor:self.safeAreaLayoutGuide.widthAnchor constant:-40],
         [self.panel.centerXAnchor constraintEqualToAnchor:self.safeAreaLayoutGuide.centerXAnchor],
         [self.panel.centerYAnchor constraintEqualToAnchor:self.safeAreaLayoutGuide.centerYAnchor],
 
-        // 内容区域约束
-        [content.topAnchor constraintEqualToAnchor:self.panel.topAnchor constant:20],
-        [content.leadingAnchor constraintEqualToAnchor:self.panel.leadingAnchor constant:16],
-        [content.trailingAnchor constraintEqualToAnchor:self.panel.trailingAnchor constant:-16],
-
-        // 横向分割线
-        [horizontalDivider.topAnchor constraintEqualToAnchor:content.bottomAnchor constant:18],
-        [horizontalDivider.leadingAnchor constraintEqualToAnchor:self.panel.leadingAnchor],
-        [horizontalDivider.trailingAnchor constraintEqualToAnchor:self.panel.trailingAnchor],
-        [horizontalDivider.heightAnchor constraintEqualToConstant:0.5],
-
-        // 按钮容器
-        [buttonContainer.topAnchor constraintEqualToAnchor:horizontalDivider.bottomAnchor],
+        // 按钮容器约束（固定在底部，高度 46pt）
         [buttonContainer.leadingAnchor constraintEqualToAnchor:self.panel.leadingAnchor],
         [buttonContainer.trailingAnchor constraintEqualToAnchor:self.panel.trailingAnchor],
         [buttonContainer.bottomAnchor constraintEqualToAnchor:self.panel.bottomAnchor],
         [buttonContainer.heightAnchor constraintEqualToConstant:46],
+
+        // 横向分割线（贴在按钮容器上方）
+        [horizontalDivider.bottomAnchor constraintEqualToAnchor:buttonContainer.topAnchor],
+        [horizontalDivider.leadingAnchor constraintEqualToAnchor:self.panel.leadingAnchor],
+        [horizontalDivider.trailingAnchor constraintEqualToAnchor:self.panel.trailingAnchor],
+        [horizontalDivider.heightAnchor constraintEqualToConstant:0.5],
+
+        // 内容区域约束（在顶部与分割线之间居中）
+        [content.centerYAnchor constraintEqualToAnchor:self.panel.topAnchor constant:51.75],
+        [content.leadingAnchor constraintEqualToAnchor:self.panel.leadingAnchor constant:16],
+        [content.trailingAnchor constraintEqualToAnchor:self.panel.trailingAnchor constant:-16],
 
         // 取消按钮
         [cancelButton.leadingAnchor constraintEqualToAnchor:buttonContainer.leadingAnchor],
