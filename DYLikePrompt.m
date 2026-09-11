@@ -58,18 +58,17 @@ static __weak DYLikePrompt *DYLikeVisiblePrompt;
 - (UIButton *)buttonWithTitle:(NSString *)title primary:(BOOL)primary accent:(UIColor *)accent {
     UIButton *button = [UIButton buttonWithType:UIButtonTypeSystem];
     [button setTitle:title forState:UIControlStateNormal];
-    // 将按钮字体大小调小至 14
     button.titleLabel.font = [[UIFontMetrics metricsForTextStyle:UIFontTextStyleBody]
-        scaledFontForFont:[UIFont systemFontOfSize:14 weight:UIFontWeightMedium] maximumPointSize:20];
+        scaledFontForFont:[UIFont systemFontOfSize:15 weight:UIFontWeightMedium] maximumPointSize:22];
     button.titleLabel.adjustsFontForContentSizeCategory = YES;
     button.titleLabel.adjustsFontSizeToFitWidth = YES;
     button.titleLabel.minimumScaleFactor = 0.8;
-    button.contentEdgeInsets = UIEdgeInsetsMake(10, 8, 10, 8);
-    button.layer.cornerRadius = 12;
+    button.contentEdgeInsets = UIEdgeInsetsMake(12, 10, 12, 10);
+    button.layer.cornerRadius = 14;
     button.layer.cornerCurve = kCACornerCurveContinuous;
     button.backgroundColor = primary ? accent : UIColor.tertiarySystemFillColor;
     [button setTitleColor:primary ? UIColor.whiteColor : UIColor.labelColor forState:UIControlStateNormal];
-    [button.heightAnchor constraintGreaterThanOrEqualToConstant:40].active = YES;
+    [button.heightAnchor constraintGreaterThanOrEqualToConstant:44].active = YES;
     [button addTarget:self action:primary ? @selector(confirm) : @selector(cancel) forControlEvents:UIControlEventTouchUpInside];
     return button;
 }
@@ -97,7 +96,7 @@ static __weak DYLikePrompt *DYLikeVisiblePrompt;
     self.panel = [UIView new];
     self.panel.translatesAutoresizingMaskIntoConstraints = NO;
     self.panel.backgroundColor = UIColor.whiteColor;
-    self.panel.layer.cornerRadius = 24;
+    self.panel.layer.cornerRadius = 26;
     self.panel.layer.cornerCurve = kCACornerCurveContinuous;
     self.panel.clipsToBounds = YES;
     [self addSubview:self.panel];
@@ -109,20 +108,20 @@ static __weak DYLikePrompt *DYLikeVisiblePrompt;
 
     UIStackView *content = [UIStackView new];
     content.axis = UILayoutConstraintAxisVertical;
-    content.spacing = 8;
+    content.spacing = 10;
     content.alignment = UIStackViewAlignmentFill;
     content.translatesAutoresizingMaskIntoConstraints = NO;
     [scroll addSubview:content];
 
-    UILabel *amzzLabel = [self labelWithText:@"AMZZ" size:18 weight:UIFontWeightBold];
+    UILabel *amzzLabel = [self labelWithText:@"AMZZ" size:20 weight:UIFontWeightBold];
     [content addArrangedSubview:amzzLabel];
 
-    self.heading = [self labelWithText:title size:14 weight:UIFontWeightRegular];
+    self.heading = [self labelWithText:title size:15 weight:UIFontWeightRegular];
     self.heading.accessibilityTraits |= UIAccessibilityTraitHeader;
     [content addArrangedSubview:self.heading];
 
     if (name.length) {
-        UILabel *nameLabel = [self labelWithText:name size:13 weight:UIFontWeightMedium];
+        UILabel *nameLabel = [self labelWithText:name size:14 weight:UIFontWeightMedium];
         nameLabel.numberOfLines = 2;
         nameLabel.lineBreakMode = NSLineBreakByTruncatingTail;
         [content addArrangedSubview:nameLabel];
@@ -133,35 +132,36 @@ static __weak DYLikePrompt *DYLikeVisiblePrompt;
         [self buttonWithTitle:confirmTitle primary:YES accent:DYLikeAccent(action)]
     ]];
     self.buttons.translatesAutoresizingMaskIntoConstraints = NO;
-    self.buttons.spacing = 10;
+    self.buttons.spacing = 12;
     self.buttons.distribution = UIStackViewDistributionFillEqually;
     [self.panel addSubview:self.buttons];
     [self updateButtonAxis];
 
-    NSLayoutConstraint *preferredWidth = [self.panel.widthAnchor constraintEqualToConstant:270];
+    // 将弹窗目标宽度调大至 320
+    NSLayoutConstraint *preferredWidth = [self.panel.widthAnchor constraintEqualToConstant:320];
     preferredWidth.priority = 999;
     NSLayoutConstraint *contentHeight = [scroll.heightAnchor constraintEqualToAnchor:scroll.contentLayoutGuide.heightAnchor];
     contentHeight.priority = 750;
     [NSLayoutConstraint activateConstraints:@[
         preferredWidth,
-        [self.panel.widthAnchor constraintLessThanOrEqualToAnchor:self.safeAreaLayoutGuide.widthAnchor constant:-50],
+        [self.panel.widthAnchor constraintLessThanOrEqualToAnchor:self.safeAreaLayoutGuide.widthAnchor constant:-40],
         [self.panel.centerXAnchor constraintEqualToAnchor:self.safeAreaLayoutGuide.centerXAnchor],
         [self.panel.centerYAnchor constraintEqualToAnchor:self.safeAreaLayoutGuide.centerYAnchor],
         [self.panel.topAnchor constraintGreaterThanOrEqualToAnchor:self.safeAreaLayoutGuide.topAnchor constant:12],
         [self.panel.bottomAnchor constraintLessThanOrEqualToAnchor:self.safeAreaLayoutGuide.bottomAnchor constant:-12],
-        [scroll.topAnchor constraintEqualToAnchor:self.panel.topAnchor constant:18],
-        [scroll.leadingAnchor constraintEqualToAnchor:self.panel.leadingAnchor constant:16],
-        [scroll.trailingAnchor constraintEqualToAnchor:self.panel.trailingAnchor constant:-16],
-        [scroll.heightAnchor constraintGreaterThanOrEqualToConstant:30], contentHeight,
+        [scroll.topAnchor constraintEqualToAnchor:self.panel.topAnchor constant:22],
+        [scroll.leadingAnchor constraintEqualToAnchor:self.panel.leadingAnchor constant:20],
+        [scroll.trailingAnchor constraintEqualToAnchor:self.panel.trailingAnchor constant:-20],
+        [scroll.heightAnchor constraintGreaterThanOrEqualToConstant:36], contentHeight,
         [content.topAnchor constraintEqualToAnchor:scroll.contentLayoutGuide.topAnchor],
         [content.bottomAnchor constraintEqualToAnchor:scroll.contentLayoutGuide.bottomAnchor],
         [content.leadingAnchor constraintEqualToAnchor:scroll.contentLayoutGuide.leadingAnchor],
         [content.trailingAnchor constraintEqualToAnchor:scroll.contentLayoutGuide.trailingAnchor],
         [content.widthAnchor constraintEqualToAnchor:scroll.frameLayoutGuide.widthAnchor],
-        [self.buttons.topAnchor constraintEqualToAnchor:scroll.bottomAnchor constant:14],
-        [self.buttons.leadingAnchor constraintEqualToAnchor:self.panel.leadingAnchor constant:16],
-        [self.buttons.trailingAnchor constraintEqualToAnchor:self.panel.trailingAnchor constant:-16],
-        [self.buttons.bottomAnchor constraintEqualToAnchor:self.panel.bottomAnchor constant:-16]
+        [self.buttons.topAnchor constraintEqualToAnchor:scroll.bottomAnchor constant:20],
+        [self.buttons.leadingAnchor constraintEqualToAnchor:self.panel.leadingAnchor constant:20],
+        [self.buttons.trailingAnchor constraintEqualToAnchor:self.panel.trailingAnchor constant:-20],
+        [self.buttons.bottomAnchor constraintEqualToAnchor:self.panel.bottomAnchor constant:-20]
     ]];
 }
 
