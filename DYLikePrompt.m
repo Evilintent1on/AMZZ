@@ -115,10 +115,10 @@ static __weak DYLikePrompt *DYLikeVisiblePrompt;
     buttonContainer.translatesAutoresizingMaskIntoConstraints = NO;
     [self.panel addSubview:buttonContainer];
 
-    // “取消”按钮（纯黑字体，无背景）
+    // “取消”按钮（半透明灰色）
     UIButton *cancelButton = [UIButton buttonWithType:UIButtonTypeSystem];
     [cancelButton setTitle:@"取消" forState:UIControlStateNormal];
-    [cancelButton setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
+    [cancelButton setTitleColor:[UIColor colorWithWhite:0 alpha:0.5] forState:UIControlStateNormal];
     cancelButton.backgroundColor = [UIColor clearColor];
     cancelButton.titleLabel.font = [UIFont systemFontOfSize:16 weight:UIFontWeightRegular];
     cancelButton.translatesAutoresizingMaskIntoConstraints = NO;
@@ -131,18 +131,18 @@ static __weak DYLikePrompt *DYLikeVisiblePrompt;
     verticalDivider.backgroundColor = [UIColor colorWithWhite:0 alpha:0.1];
     [buttonContainer addSubview:verticalDivider];
 
-    // “确认”按钮（参照图4统一纯黑字体，无背景）
+    // “确认”按钮（抖音红：#FE2C55）
     UIButton *confirmButton = [UIButton buttonWithType:UIButtonTypeSystem];
     [confirmButton setTitle:confirmTitle forState:UIControlStateNormal];
-    [confirmButton setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
+    [confirmButton setTitleColor:[UIColor colorWithRed:254/255.0 green:44/255.0 blue:85/255.0 alpha:1.0] forState:UIControlStateNormal];
     confirmButton.backgroundColor = [UIColor clearColor];
     confirmButton.titleLabel.font = [UIFont systemFontOfSize:16 weight:UIFontWeightMedium];
     confirmButton.translatesAutoresizingMaskIntoConstraints = NO;
     [confirmButton addTarget:self action:@selector(confirm) forControlEvents:UIControlEventTouchUpInside];
     [buttonContainer addSubview:confirmButton];
 
-    // 布局约束
-    NSLayoutConstraint *preferredWidth = [self.panel.widthAnchor constraintEqualToConstant:270];
+    // 布局约束：将宽度固定值修改为 275pt
+    NSLayoutConstraint *preferredWidth = [self.panel.widthAnchor constraintEqualToConstant:275];
     preferredWidth.priority = 999;
 
     [NSLayoutConstraint activateConstraints:@[
