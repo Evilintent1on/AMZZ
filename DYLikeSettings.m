@@ -1,63 +1,28 @@
 #import "DYLikeSettings.h"
-#import "../Core/DYLikeCore.h"
-#import <objc/runtime.h>
+
+@interface DYLikeSettingsViewController : UITableViewController
+@end
 
 @implementation DYLikeSettingsViewController
 
 - (instancetype)init {
-    return [super initWithStyle:UITableViewStyleInsetGrouped];
+    return [super initWithStyle:UITableViewStyleGrouped];
 }
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    self.title = @"二次确认";
-    self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
-    self.tableView.backgroundColor = UIColor.systemGroupedBackgroundColor;
-    self.tableView.separatorColor = UIColor.separatorColor;
-    self.tableView.rowHeight = UITableViewAutomaticDimension;
-    self.tableView.estimatedRowHeight = 58;
-    self.tableView.sectionHeaderHeight = UITableViewAutomaticDimension;
-    self.tableView.sectionFooterHeight = UITableViewAutomaticDimension;
-    self.tableView.showsVerticalScrollIndicator = NO;
-    [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(updateTheme)
-        name:DYLikeThemeDidChangeNotification object:nil];
-    [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(updateTheme)
-        name:UIApplicationDidBecomeActiveNotification object:nil];
-    [self updateTheme];
+    self.title = @"二次确认设置";
+    self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc]
+        initWithBarButtonSystemItem:UIBarButtonSystemItemDone
+                             target:self
+                             action:@selector(dismissSelf)];
 }
 
-- (void)viewWillAppear:(BOOL)animated {
-    [super viewWillAppear:animated];
-    [self updateTheme];
-    [self.tableView reloadData];
+- (void)dismissSelf {
+    [self dismissViewControllerAnimated:YES completion:nil];
 }
 
-- (void)updateTheme {
-    UIUserInterfaceStyle style = DYLikeUserInterfaceStyle();
-    if (self.overrideUserInterfaceStyle != style) self.overrideUserInterfaceStyle = style;
-    UITraitCollection *theme = [UITraitCollection traitCollectionWithUserInterfaceStyle:self.overrideUserInterfaceStyle];
-    UINavigationBarAppearance *appearance = [UINavigationBarAppearance new];
-    [appearance configureWithOpaqueBackground];
-    appearance.backgroundColor = [UIColor.systemGroupedBackgroundColor resolvedColorWithTraitCollection:theme];
-    appearance.titleTextAttributes = @{NSForegroundColorAttributeName: [UIColor.labelColor resolvedColorWithTraitCollection:theme]};
-    self.navigationItem.standardAppearance = appearance;
-    self.navigationItem.scrollEdgeAppearance = appearance;
-    self.navigationItem.compactAppearance = appearance;
-    [self setNeedsStatusBarAppearanceUpdate];
-}
-
-- (void)traitCollectionDidChange:(UITraitCollection *)previousTraitCollection {
-    [super traitCollectionDidChange:previousTraitCollection];
-    [self updateTheme];
-}
-
-- (UIStatusBarStyle)preferredStatusBarStyle {
-    return DYLikeUserInterfaceStyle() == UIUserInterfaceStyleDark ? UIStatusBarStyleLightContent : UIStatusBarStyleDarkContent;
-}
-
-- (void)dealloc {
-    [NSNotificationCenter.defaultCenter removeObserver:self];
-}
+#pragma mark - TableView Data Source
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
     return 1;
@@ -67,147 +32,48 @@
     return 3;
 }
 
-- (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
-    return @"功能开关";
-}
-
-- (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
-    return @"开启后，抖音对应操作会先显示确认弹窗；设置修改后立即生效。";
-}
-
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-    static NSArray<NSString *> *titles;
-    static NSArray<NSString *> *symbols;
-    static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{
-        titles = @[@"点赞", @"收藏", @"关注"];
-        symbols = @[@"heart.fill", @"bookmark.fill", @"person.badge.plus"];
-    });
+    static NSString *cellID = @"DYLikeSettingsCell";
+    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:cellID];
+    if (!cell) {
+        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:cellID];
+        cell.selectionStyle = UITableViewCellSelectionStyleNone;
+    }
 
-    NSUInteger index = (NSUInteger)indexPath.row;
-    UITableViewCell *cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault
-                                                    reuseIdentifier:nil];
-    cell.textLabel.text = titles[index];
-    cell.textLabel.font = [UIFont preferredFontForTextStyle:UIFontTextStyleBody];
-    cell.textLabel.adjustsFontForContentSizeCategory = YES;
-    cell.textLabel.textColor = UIColor.labelColor;
-    cell.backgroundColor = UIColor.secondarySystemGroupedBackgroundColor;
-    cell.imageView.image = [UIImage systemImageNamed:symbols[index]
-        withConfiguration:[UIImageSymbolConfiguration configurationWithPointSize:20
-            weight:UIImageSymbolWeightMedium]];
-    cell.imageView.tintColor = DYLikeAccent((DYLikeActionType)index);
-    cell.selectionStyle = UITableViewCellSelectionStyleNone;
+    UISwitch *switchControl = [UISwitch new];
+    // 强制使用 iOS 系统原生绿色，统一视觉风格
+    switchControl.onTintColor = [UIColor systemGreenColor];
+    switchControl.tag = indexPath.row;
+    [switchControl addTarget:self action:@selector(switchChanged:) forControlEvents:UIControlEventValueChanged];
+    cell.accessoryView = switchControl;
 
-    UISwitch *toggle = [UISwitch new];
-    toggle.onTintColor = DYLikeAccent((DYLikeActionType)index);
-    toggle.on = DYLikeEnabled((DYLikeActionType)index);
-    toggle.tag = (NSInteger)index;
-    toggle.accessibilityLabel = [titles[index] stringByAppendingString:@"二次确认"];
-    [toggle addTarget:self action:@selector(toggleChanged:) forControlEvents:UIControlEventValueChanged];
-    cell.accessoryView = toggle;
+    if (indexPath.row == 0) {
+        cell.textLabel.text = @"点赞二次确认";
+        cell.detailTextLabel.text = @"开启后，双击或点击点赞图标将弹出确认框";
+        switchControl.on = DYLikeGetBoolPref(@"DYLikeEnableConfirm", YES);
+    } else if (indexPath.row == 1) {
+        cell.textLabel.text = @"收藏二次确认";
+        cell.detailTextLabel.text = @"开启后，点击收藏图标将弹出确认框";
+        switchControl.on = DYLikeGetBoolPref(@"DYFavoriteEnableConfirm", YES);
+    } else if (indexPath.row == 2) {
+        cell.textLabel.text = @"关注二次确认";
+        cell.detailTextLabel.text = @"开启后，点击关注按钮将弹出确认框";
+        switchControl.on = DYLikeGetBoolPref(@"DYFollowEnableConfirm", YES);
+    }
+
     return cell;
 }
 
-- (void)toggleChanged:(UISwitch *)toggle {
-    if (toggle.tag < 0 || toggle.tag > 2) return;
-    NSArray<NSString *> *keys = @[DYLikeLikeEnabledKey, DYLikeFavoriteEnabledKey, DYLikeFollowEnabledKey];
-    [NSUserDefaults.standardUserDefaults setBool:toggle.isOn forKey:keys[(NSUInteger)toggle.tag]];
-}
+#pragma mark - Actions
 
-- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
-    [tableView deselectRowAtIndexPath:indexPath animated:YES];
-}
-
-- (void)closeSettings {
-    [self dismissViewControllerAnimated:YES completion:nil];
+- (void)switchChanged:(UISwitch *)sender {
+    if (sender.tag == 0) {
+        DYLikeSetBoolPref(@"DYLikeEnableConfirm", sender.isOn);
+    } else if (sender.tag == 1) {
+        DYLikeSetBoolPref(@"DYFavoriteEnableConfirm", sender.isOn);
+    } else if (sender.tag == 2) {
+        DYLikeSetBoolPref(@"DYFollowEnableConfirm", sender.isOn);
+    }
 }
 
 @end
-
-static UIViewController *DYLikeTop(UIViewController *controller) {
-    if (controller.presentedViewController && !controller.presentedViewController.isBeingDismissed) {
-        return DYLikeTop(controller.presentedViewController);
-    }
-    if ([controller isKindOfClass:UINavigationController.class]) {
-        return DYLikeTop(((UINavigationController *)controller).visibleViewController);
-    }
-    if ([controller isKindOfClass:UITabBarController.class]) {
-        return DYLikeTop(((UITabBarController *)controller).selectedViewController);
-    }
-    return controller;
-}
-
-void DYLikeOpenSettings(void) {
-    dispatch_async(dispatch_get_main_queue(), ^{
-        UIWindow *window = DYLikeActiveWindow();
-        UIViewController *top = DYLikeTop(window.rootViewController);
-        if (!top || [top isKindOfClass:DYLikeSettingsViewController.class]) return;
-
-        DYLikeSettingsViewController *settings = [DYLikeSettingsViewController new];
-        settings.overrideUserInterfaceStyle = DYLikeUserInterfaceStyle();
-        if (top.navigationController) {
-            [top.navigationController pushViewController:settings animated:YES];
-        } else {
-            UINavigationController *navigation = [[UINavigationController alloc] initWithRootViewController:settings];
-            settings.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc]
-                initWithBarButtonSystemItem:UIBarButtonSystemItemClose target:settings action:@selector(closeSettings)];
-            [top presentViewController:navigation animated:YES completion:nil];
-        }
-    });
-}
-
-static BOOL DYLikeSet(id object, NSString *key, id value) {
-    @try {
-        [object setValue:value forKey:key];
-        return YES;
-    } @catch (__unused NSException *exception) {
-        return NO;
-    }
-}
-
-void DYLikeInstallSettingsHook(void) {
-    static BOOL installed;
-    if (installed) return;
-    Class cls = NSClassFromString(@"AWESettingsViewModel");
-    Class itemClass = NSClassFromString(@"AWESettingItemModel");
-    Class sectionClass = NSClassFromString(@"AWESettingSectionModel");
-    SEL selector = NSSelectorFromString(@"sectionDataArray");
-    Method method = class_getInstanceMethod(cls, selector);
-    if (!method || !itemClass || !sectionClass) return;
-    NSMethodSignature *signature = [NSMethodSignature signatureWithObjCTypes:method_getTypeEncoding(method)];
-    if (signature.numberOfArguments != 2 || signature.methodReturnType[0] != '@') return;
-
-    IMP original = method_getImplementation(method);
-    IMP replacement = imp_implementationWithBlock(^id(id owner) {
-        id value = ((id (*)(id, SEL))original)(owner, selector);
-        if (![value isKindOfClass:NSArray.class]) return value;
-        for (id section in value) {
-            id items = DYLikeRead(section, @"itemArray");
-            if (![items isKindOfClass:NSArray.class]) continue;
-            for (id item in items) {
-                if ([DYLikeRead(item, @"identifier") isEqual:@"DYSecondaryConfirmation.Settings"]) return value;
-            }
-        }
-
-        id item = [itemClass new];
-        BOOL valid = DYLikeSet(item, @"identifier", @"DYSecondaryConfirmation.Settings");
-        valid &= DYLikeSet(item, @"title", @"二次确认");
-        valid &= DYLikeSet(item, @"cellType", @26);
-        valid &= DYLikeSet(item, @"cellTappedBlock", ^{ DYLikeOpenSettings(); });
-        DYLikeSet(item, @"detail", DYLikeVersion);
-        DYLikeSet(item, @"isEnable", @YES);
-        DYLikeSet(item, @"colorStyle", @2);
-        DYLikeSet(item, @"svgIconImageName", @"ic_gearsimplify_outlined_20");
-        DYLikeSet(item, @"specificIconImage", [UIImage systemImageNamed:@"checkmark.circle.fill"]);
-
-        id section = [sectionClass new];
-        valid &= DYLikeSet(section, @"itemArray", @[item]);
-        DYLikeSet(section, @"sectionHeaderHeight", @16);
-        if (!valid) return value;
-        NSMutableArray *sections = [value mutableCopy];
-        [sections insertObject:section atIndex:0];
-        return sections;
-    });
-    class_replaceMethod(cls, selector, replacement, method_getTypeEncoding(method));
-    installed = YES;
-}
