@@ -1,9 +1,19 @@
 #import "DYLikeSettings.h"
 #import <UIKit/UIKit.h>
 
-// 声明配置读取与写入 C 函数
-FOUNDATION_EXPORT BOOL DYLikeGetBoolPref(NSString *key, BOOL defaultValue);
-FOUNDATION_EXPORT void DYLikeSetBoolPref(NSString *key, BOOL value);
+static NSString *const kDYLikeSuiteName = @"com.apple.Preferences";
+
+static BOOL DYLikeReadBool(NSString *key, BOOL defaultValue) {
+    NSUserDefaults *defaults = [[NSUserDefaults alloc] initWithSuiteName:kDYLikeSuiteName] ?: [NSUserDefaults standardUserDefaults];
+    id obj = [defaults objectForKey:key];
+    return obj ? [obj boolValue] : defaultValue;
+}
+
+static void DYLikeWriteBool(NSString *key, BOOL value) {
+    NSUserDefaults *defaults = [[NSUserDefaults alloc] initWithSuiteName:kDYLikeSuiteName] ?: [NSUserDefaults standardUserDefaults];
+    [defaults setBool:value forKey:key];
+    [defaults synchronize];
+}
 
 @implementation DYLikeSettingsViewController
 
@@ -43,7 +53,7 @@ FOUNDATION_EXPORT void DYLikeSetBoolPref(NSString *key, BOOL value);
     }
 
     UISwitch *switchControl = [UISwitch new];
-    // 使用 iOS 系统原生绿色
+    // 使用 iOS 系统原生绿色开关
     switchControl.onTintColor = [UIColor systemGreenColor];
     switchControl.tag = indexPath.row;
     [switchControl addTarget:self action:@selector(switchChanged:) forControlEvents:UIControlEventValueChanged];
@@ -52,15 +62,15 @@ FOUNDATION_EXPORT void DYLikeSetBoolPref(NSString *key, BOOL value);
     if (indexPath.row == 0) {
         cell.textLabel.text = @"点赞二次确认";
         cell.detailTextLabel.text = @"开启后，双击或点击点赞图标将弹出确认框";
-        switchControl.on = DYLikeGetBoolPref(@"DYLikeEnableConfirm", YES);
+        switchControl.on = DYLikeReadBool(@"DYLikeEnableConfirm", YES);
     } else if (indexPath.row == 1) {
         cell.textLabel.text = @"收藏二次确认";
         cell.detailTextLabel.text = @"开启后，点击收藏图标将弹出确认框";
-        switchControl.on = DYLikeGetBoolPref(@"DYFavoriteEnableConfirm", YES);
+        switchControl.on = DYLikeReadBool(@"DYFavoriteEnableConfirm", YES);
     } else if (indexPath.row == 2) {
         cell.textLabel.text = @"关注二次确认";
         cell.detailTextLabel.text = @"开启后，点击关注按钮将弹出确认框";
-        switchControl.on = DYLikeGetBoolPref(@"DYFollowEnableConfirm", YES);
+        switchControl.on = DYLikeReadBool(@"DYFollowEnableConfirm", YES);
     }
 
     return cell;
@@ -70,11 +80,11 @@ FOUNDATION_EXPORT void DYLikeSetBoolPref(NSString *key, BOOL value);
 
 - (void)switchChanged:(UISwitch *)sender {
     if (sender.tag == 0) {
-        DYLikeSetBoolPref(@"DYLikeEnableConfirm", sender.isOn);
+        DYLikeWriteBool(@"DYLikeEnableConfirm", sender.isOn);
     } else if (sender.tag == 1) {
-        DYLikeSetBoolPref(@"DYFavoriteEnableConfirm", sender.isOn);
+        DYLikeWriteBool(@"DYFavoriteEnableConfirm", sender.isOn);
     } else if (sender.tag == 2) {
-        DYLikeSetBoolPref(@"DYFollowEnableConfirm", sender.isOn);
+        DYLikeWriteBool(@"DYFollowEnableConfirm", sender.isOn);
     }
 }
 
