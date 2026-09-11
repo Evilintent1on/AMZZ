@@ -22,12 +22,17 @@ jobs:
         run: |
           brew install ldid dpkg make
 
-      # 关键补充：自动整理目录结构，解决找不到源码文件的问题
       - name: 自动修正源码目录
         run: |
           mkdir -p Sources/Hooks layout
           cp *.m *.h *.inc Sources/Hooks/ 2>/dev/null || true
           cp *.plist layout/ 2>/dev/null || true
+
+      # 就是这一步，把旧的 SDK 版本自动替换掉
+      - name: 自动修正 Makefile 中的 SDK 版本
+        run: |
+          sed -i '' 's/16.5/latest/g' Makefile || true
+          sed -i '' 's/iPhoneOS16.5/iPhoneOS17.0/g' Makefile || true
 
       - name: Build Tweak
         run: |
@@ -37,5 +42,5 @@ jobs:
       - name: Upload DEB
         uses: actions/upload-artifact@v4
         with:
-          name: amzz-deb
+          name: wczz-deb
           path: packages/*.deb
