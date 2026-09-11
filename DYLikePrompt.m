@@ -85,7 +85,7 @@ static __weak DYLikePrompt *DYLikeVisiblePrompt;
     // 上半部分内容容器
     UIStackView *content = [UIStackView new];
     content.axis = UILayoutConstraintAxisVertical;
-    content.spacing = 6;
+    content.spacing = 4;
     content.alignment = UIStackViewAlignmentFill;
     content.translatesAutoresizingMaskIntoConstraints = NO;
     [self.panel addSubview:content];
@@ -141,11 +141,11 @@ static __weak DYLikePrompt *DYLikeVisiblePrompt;
     [confirmButton addTarget:self action:@selector(confirm) forControlEvents:UIControlEventTouchUpInside];
     [buttonContainer addSubview:confirmButton];
 
-    // 布局约束：严格设定宽度 280pt，高度 150pt
+    // 布局约束：严格设定宽度 280pt，高度 140pt
     NSLayoutConstraint *preferredWidth = [self.panel.widthAnchor constraintEqualToConstant:280];
     preferredWidth.priority = 999;
 
-    NSLayoutConstraint *preferredHeight = [self.panel.heightAnchor constraintEqualToConstant:150];
+    NSLayoutConstraint *preferredHeight = [self.panel.heightAnchor constraintEqualToConstant:140];
     preferredHeight.priority = 999;
 
     [NSLayoutConstraint activateConstraints:@[
@@ -155,11 +155,11 @@ static __weak DYLikePrompt *DYLikeVisiblePrompt;
         [self.panel.centerXAnchor constraintEqualToAnchor:self.safeAreaLayoutGuide.centerXAnchor],
         [self.panel.centerYAnchor constraintEqualToAnchor:self.safeAreaLayoutGuide.centerYAnchor],
 
-        // 按钮容器约束（固定在底部，高度 46pt）
+        // 按钮容器约束（固定在底部，高度 44pt）
         [buttonContainer.leadingAnchor constraintEqualToAnchor:self.panel.leadingAnchor],
         [buttonContainer.trailingAnchor constraintEqualToAnchor:self.panel.trailingAnchor],
         [buttonContainer.bottomAnchor constraintEqualToAnchor:self.panel.bottomAnchor],
-        [buttonContainer.heightAnchor constraintEqualToConstant:46],
+        [buttonContainer.heightAnchor constraintEqualToConstant:44],
 
         // 横向分割线（贴在按钮容器上方）
         [horizontalDivider.bottomAnchor constraintEqualToAnchor:buttonContainer.topAnchor],
@@ -167,8 +167,8 @@ static __weak DYLikePrompt *DYLikeVisiblePrompt;
         [horizontalDivider.trailingAnchor constraintEqualToAnchor:self.panel.trailingAnchor],
         [horizontalDivider.heightAnchor constraintEqualToConstant:0.5],
 
-        // 内容区域约束（在顶部与分割线之间居中）
-        [content.centerYAnchor constraintEqualToAnchor:self.panel.topAnchor constant:51.75],
+        // 内容区域约束（在 96pt 的上半部空间内居中）
+        [content.centerYAnchor constraintEqualToAnchor:self.panel.topAnchor constant:48],
         [content.leadingAnchor constraintEqualToAnchor:self.panel.leadingAnchor constant:16],
         [content.trailingAnchor constraintEqualToAnchor:self.panel.trailingAnchor constant:-16],
 
