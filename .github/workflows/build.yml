@@ -2,7 +2,7 @@ name: Build DEB
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, master ]
   workflow_dispatch:
 
 jobs:
@@ -12,22 +12,23 @@ jobs:
       - name: 拉取源码
         uses: actions/checkout@v4
 
-      - name: 自动配置基础环境（你什么都不用做）
+      - name: 安装基础依赖与 ldid
         run: |
           sudo apt-get update
           sudo apt-get install -y fakeroot dpkg-dev git wget
-
-      - name: 自动下载签名工具 ldid
-        run: |
           wget https://github.com/ProcursusTeam/ldid/releases/download/v2.1.5-procursus7/ldid_linux_x86_64
           chmod +x ldid_linux_x86_64
           sudo mv ldid_linux_x86_64 /usr/local/bin/ldid
 
-      - name: 自动安装 Theos 环境
+      - name: 安装 Theos 环境
         run: |
           git clone --recursive https://github.com/theos/theos.git $HOME/theos
           echo "THEOS=$HOME/theos" >> $GITHUB_ENV
           echo "$HOME/theos/bin" >> $GITHUB_PATH
+
+      - name: 下载 iOS SDK（解决没有SDK报错）
+        run: |
+          git clone --depth 1 https://github.com/theos/sdks.git $HOME/theos/sdks
 
       - name: 开始编译插件
         run: |
