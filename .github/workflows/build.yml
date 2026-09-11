@@ -1,0 +1,31 @@
+name: Build DEB
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装打包工具
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fakeroot dpkg-dev ldid
+
+      - name: 配置 Theos 环境
+        uses: theos/theos-action@main
+
+      - name: 编译插件
+        run: |
+          make clean
+          make package
+
+      - name: 上传 deb
+        uses: actions/upload-artifact@v4
+        with:
+          name: 编译出的插件deb
+          path: ./packages/*.deb
