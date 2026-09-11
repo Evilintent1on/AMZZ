@@ -26,8 +26,9 @@ jobs:
           echo "THEOS=$HOME/theos" >> $GITHUB_ENV
           echo "$HOME/theos/bin" >> $GITHUB_PATH
 
-      - name: 下载 iOS SDK（解决没有SDK报错）
+      - name: 下载 iOS SDK
         run: |
+          rm -rf $HOME/theos/sdks
           git clone --depth 1 https://github.com/theos/sdks.git $HOME/theos/sdks
 
       - name: 开始编译插件
