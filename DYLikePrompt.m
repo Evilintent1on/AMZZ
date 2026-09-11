@@ -63,12 +63,12 @@ static __weak DYLikePrompt *DYLikeVisiblePrompt;
     button.titleLabel.adjustsFontForContentSizeCategory = YES;
     button.titleLabel.adjustsFontSizeToFitWidth = YES;
     button.titleLabel.minimumScaleFactor = 0.8;
-    button.contentEdgeInsets = UIEdgeInsetsMake(12, 10, 12, 10);
-    button.layer.cornerRadius = 14;
+    button.contentEdgeInsets = UIEdgeInsetsMake(11, 8, 11, 8);
+    button.layer.cornerRadius = 13;
     button.layer.cornerCurve = kCACornerCurveContinuous;
     button.backgroundColor = primary ? accent : UIColor.tertiarySystemFillColor;
     [button setTitleColor:primary ? UIColor.whiteColor : UIColor.labelColor forState:UIControlStateNormal];
-    [button.heightAnchor constraintGreaterThanOrEqualToConstant:44].active = YES;
+    [button.heightAnchor constraintGreaterThanOrEqualToConstant:42].active = YES;
     [button addTarget:self action:primary ? @selector(confirm) : @selector(cancel) forControlEvents:UIControlEventTouchUpInside];
     return button;
 }
@@ -84,7 +84,8 @@ static __weak DYLikePrompt *DYLikeVisiblePrompt;
 
     NSString *verb = action == DYLikeActionLike ? @"点赞" : action == DYLikeActionFavorite ? @"收藏" : @"关注";
     NSString *title = [NSString stringWithFormat:@"是否确认%@", verb];
-    NSString *confirmTitle = [@"确认" stringByAppendingString:verb];
+    // 确认按钮改为“确认”
+    NSString *confirmTitle = @"确认";
     if (intent == DYLikeIntentRemove) {
         title = [NSString stringWithFormat:@"是否取消%@", verb];
         confirmTitle = @"确认取消";
@@ -96,7 +97,7 @@ static __weak DYLikePrompt *DYLikeVisiblePrompt;
     self.panel = [UIView new];
     self.panel.translatesAutoresizingMaskIntoConstraints = NO;
     self.panel.backgroundColor = UIColor.whiteColor;
-    self.panel.layer.cornerRadius = 26;
+    self.panel.layer.cornerRadius = 24;
     self.panel.layer.cornerCurve = kCACornerCurveContinuous;
     self.panel.clipsToBounds = YES;
     [self addSubview:self.panel];
@@ -108,12 +109,12 @@ static __weak DYLikePrompt *DYLikeVisiblePrompt;
 
     UIStackView *content = [UIStackView new];
     content.axis = UILayoutConstraintAxisVertical;
-    content.spacing = 10;
+    content.spacing = 8;
     content.alignment = UIStackViewAlignmentFill;
     content.translatesAutoresizingMaskIntoConstraints = NO;
     [scroll addSubview:content];
 
-    UILabel *amzzLabel = [self labelWithText:@"AMZZ" size:20 weight:UIFontWeightBold];
+    UILabel *amzzLabel = [self labelWithText:@"AMZZ" size:19 weight:UIFontWeightBold];
     [content addArrangedSubview:amzzLabel];
 
     self.heading = [self labelWithText:title size:15 weight:UIFontWeightRegular];
@@ -132,36 +133,36 @@ static __weak DYLikePrompt *DYLikeVisiblePrompt;
         [self buttonWithTitle:confirmTitle primary:YES accent:DYLikeAccent(action)]
     ]];
     self.buttons.translatesAutoresizingMaskIntoConstraints = NO;
-    self.buttons.spacing = 12;
+    self.buttons.spacing = 10;
     self.buttons.distribution = UIStackViewDistributionFillEqually;
     [self.panel addSubview:self.buttons];
     [self updateButtonAxis];
 
-    // 将弹窗目标宽度调大至 320
-    NSLayoutConstraint *preferredWidth = [self.panel.widthAnchor constraintEqualToConstant:320];
+    // 将弹窗目标宽度调小至 295
+    NSLayoutConstraint *preferredWidth = [self.panel.widthAnchor constraintEqualToConstant:295];
     preferredWidth.priority = 999;
     NSLayoutConstraint *contentHeight = [scroll.heightAnchor constraintEqualToAnchor:scroll.contentLayoutGuide.heightAnchor];
     contentHeight.priority = 750;
     [NSLayoutConstraint activateConstraints:@[
         preferredWidth,
-        [self.panel.widthAnchor constraintLessThanOrEqualToAnchor:self.safeAreaLayoutGuide.widthAnchor constant:-40],
+        [self.panel.widthAnchor constraintLessThanOrEqualToAnchor:self.safeAreaLayoutGuide.widthAnchor constant:-44],
         [self.panel.centerXAnchor constraintEqualToAnchor:self.safeAreaLayoutGuide.centerXAnchor],
         [self.panel.centerYAnchor constraintEqualToAnchor:self.safeAreaLayoutGuide.centerYAnchor],
         [self.panel.topAnchor constraintGreaterThanOrEqualToAnchor:self.safeAreaLayoutGuide.topAnchor constant:12],
         [self.panel.bottomAnchor constraintLessThanOrEqualToAnchor:self.safeAreaLayoutGuide.bottomAnchor constant:-12],
-        [scroll.topAnchor constraintEqualToAnchor:self.panel.topAnchor constant:22],
-        [scroll.leadingAnchor constraintEqualToAnchor:self.panel.leadingAnchor constant:20],
-        [scroll.trailingAnchor constraintEqualToAnchor:self.panel.trailingAnchor constant:-20],
-        [scroll.heightAnchor constraintGreaterThanOrEqualToConstant:36], contentHeight,
+        [scroll.topAnchor constraintEqualToAnchor:self.panel.topAnchor constant:20],
+        [scroll.leadingAnchor constraintEqualToAnchor:self.panel.leadingAnchor constant:18],
+        [scroll.trailingAnchor constraintEqualToAnchor:self.panel.trailingAnchor constant:-18],
+        [scroll.heightAnchor constraintGreaterThanOrEqualToConstant:32], contentHeight,
         [content.topAnchor constraintEqualToAnchor:scroll.contentLayoutGuide.topAnchor],
         [content.bottomAnchor constraintEqualToAnchor:scroll.contentLayoutGuide.bottomAnchor],
         [content.leadingAnchor constraintEqualToAnchor:scroll.contentLayoutGuide.leadingAnchor],
         [content.trailingAnchor constraintEqualToAnchor:scroll.contentLayoutGuide.trailingAnchor],
         [content.widthAnchor constraintEqualToAnchor:scroll.frameLayoutGuide.widthAnchor],
-        [self.buttons.topAnchor constraintEqualToAnchor:scroll.bottomAnchor constant:20],
-        [self.buttons.leadingAnchor constraintEqualToAnchor:self.panel.leadingAnchor constant:20],
-        [self.buttons.trailingAnchor constraintEqualToAnchor:self.panel.trailingAnchor constant:-20],
-        [self.buttons.bottomAnchor constraintEqualToAnchor:self.panel.bottomAnchor constant:-20]
+        [self.buttons.topAnchor constraintEqualToAnchor:scroll.bottomAnchor constant:18],
+        [self.buttons.leadingAnchor constraintEqualToAnchor:self.panel.leadingAnchor constant:18],
+        [self.buttons.trailingAnchor constraintEqualToAnchor:self.panel.trailingAnchor constant:-18],
+        [self.buttons.bottomAnchor constraintEqualToAnchor:self.panel.bottomAnchor constant:-18]
     ]];
 }
 
