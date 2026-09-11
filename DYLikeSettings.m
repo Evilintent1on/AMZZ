@@ -1,12 +1,9 @@
 #import "DYLikeSettings.h"
 #import <UIKit/UIKit.h>
 
-// 声明配置读取与写入函数，防止编译器报错
+// 声明配置读取与写入 C 函数
 FOUNDATION_EXPORT BOOL DYLikeGetBoolPref(NSString *key, BOOL defaultValue);
 FOUNDATION_EXPORT void DYLikeSetBoolPref(NSString *key, BOOL value);
-
-@interface DYLikeSettingsViewController : UITableViewController
-@end
 
 @implementation DYLikeSettingsViewController
 
@@ -46,7 +43,7 @@ FOUNDATION_EXPORT void DYLikeSetBoolPref(NSString *key, BOOL value);
     }
 
     UISwitch *switchControl = [UISwitch new];
-    // 强制使用 iOS 系统原生绿色
+    // 使用 iOS 系统原生绿色
     switchControl.onTintColor = [UIColor systemGreenColor];
     switchControl.tag = indexPath.row;
     [switchControl addTarget:self action:@selector(switchChanged:) forControlEvents:UIControlEventValueChanged];
