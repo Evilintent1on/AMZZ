@@ -22,14 +22,15 @@ jobs:
         run: |
           brew install ldid dpkg make
 
-      # 终极绝招：直接修改 Makefile，把里面的 Sources/xxx/ 路径前缀全删掉，让它去根目录找文件
-      - name: 终极修改 Makefile 路径（一劳永逸）
+      # 终极地毯式全覆盖：把所有可能的子文件夹全建好，把源码复制进去
+      - name: 自动修正源码目录（全覆盖最终版）
         run: |
-          sed -i '' 's|Sources/Core/||g' Makefile
-          sed -i '' 's|Sources/Hooks/||g' Makefile
-          sed -i '' 's|Sources/UI/||g' Makefile
-          sed -i '' 's|Sources/Settings/||g' Makefile
-          sed -i '' 's|Sources/||g' Makefile
+          mkdir -p Sources/Core Sources/Hooks Sources/UI Sources/Settings Sources/Models Sources/Utils layout
+          for dir in Core Hooks UI Settings Models Utils; do
+            cp *.m *.h *.inc Sources/$dir/ 2>/dev/null || true
+          done
+          cp *.m *.h *.inc Sources/ 2>/dev/null || true
+          cp *.plist layout/ 2>/dev/null || true
 
       - name: 自动修正 Makefile 中的 SDK 版本
         run: |
@@ -44,5 +45,5 @@ jobs:
       - name: Upload DEB
         uses: actions/upload-artifact@v4
         with:
-          name: awzz-deb
+          name: wczz-deb
           path: packages/*.deb
