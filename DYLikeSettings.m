@@ -2,9 +2,6 @@
 #import "DYLikeCore.h"
 #import <UIKit/UIKit.h>
 
-// ----------------------------------------------------------------------------
-// 1. C 函数声明与存储逻辑（防止 C99 隐式函数声明报错）
-// ----------------------------------------------------------------------------
 static NSString *const kDYLikePreferenceDomain = @"com.apple.Preferences";
 static NSString *const kDYLikeEnabledLikeKey = @"DYLikeEnabled_Like";
 static NSString *const kDYLikeEnabledFavoriteKey = @"DYLikeEnabled_Favorite";
@@ -45,9 +42,6 @@ void DYLikeSetFollowConfirmationEnabled(BOOL enabled) {
     DYLikeWriteBool(kDYLikeEnabledFollowKey, enabled);
 }
 
-// ----------------------------------------------------------------------------
-// 2. 设置界面 UI 逻辑
-// ----------------------------------------------------------------------------
 @interface DYLikeSettingsViewController ()
 @end
 
@@ -79,18 +73,9 @@ void DYLikeSetFollowConfirmationEnabled(BOOL enabled) {
         [stackView.bottomAnchor constraintEqualToAnchor:scrollView.bottomAnchor constant:-16]
     ]];
 
-    [stackView addArrangedSubview:[self createSwitchCellWithTitle:@"点赞确认" 
-                                                           action:@selector(likeSwitchChanged:) 
-                                                           isOn:DYLikeIsLikeConfirmationEnabled()
-                                                      iconImage:@"heart.fill"]];
-    [stackView addArrangedSubview:[self createSwitchCellWithTitle:@"收藏确认" 
-                                                           action:@selector(favoriteSwitchChanged:) 
-                                                           isOn:DYLikeIsFavoriteConfirmationEnabled()
-                                                      iconImage:@"bookmark.fill"]];
-    [stackView addArrangedSubview:[self createSwitchCellWithTitle:@"关注确认" 
-                                                           action:@selector(followSwitchChanged:) 
-                                                           isOn:DYLikeIsFollowConfirmationEnabled()
-                                                      iconImage:@"person.badge.plus"]];
+    [stackView addArrangedSubview:[self createSwitchCellWithTitle:@"点赞确认" action:@selector(likeSwitchChanged:) isOn:DYLikeIsLikeConfirmationEnabled() iconImage:@"heart.fill"]];
+    [stackView addArrangedSubview:[self createSwitchCellWithTitle:@"收藏确认" action:@selector(favoriteSwitchChanged:) isOn:DYLikeIsFavoriteConfirmationEnabled() iconImage:@"bookmark.fill"]];
+    [stackView addArrangedSubview:[self createSwitchCellWithTitle:@"关注确认" action:@selector(followSwitchChanged:) isOn:DYLikeIsFollowConfirmationEnabled() iconImage:@"person.badge.plus"]];
 }
 
 - (UIView *)createSwitchCellWithTitle:(NSString *)title action:(SEL)action isOn:(BOOL)isOn iconImage:(NSString *)iconName {
@@ -113,25 +98,19 @@ void DYLikeSetFollowConfirmationEnabled(BOOL enabled) {
 
     UISwitch *switchControl = [UISwitch new];
     switchControl.on = isOn;
-    
-    // 【关键修改点】：开关使用 iOS 原生绿色
     switchControl.onTintColor = [UIColor systemGreenColor];
-    
     [switchControl addTarget:self action:action forControlEvents:UIControlEventValueChanged];
     switchControl.translatesAutoresizingMaskIntoConstraints = NO;
     [cell addSubview:switchControl];
 
     [NSLayoutConstraint activateConstraints:@[
         [cell.heightAnchor constraintEqualToConstant:50],
-        
         [iconView.leadingAnchor constraintEqualToAnchor:cell.leadingAnchor constant:16],
         [iconView.centerYAnchor constraintEqualToAnchor:cell.centerYAnchor],
         [iconView.widthAnchor constraintEqualToConstant:24],
         [iconView.heightAnchor constraintEqualToConstant:24],
-
         [label.leadingAnchor constraintEqualToAnchor:iconView.trailingAnchor constant:12],
         [label.centerYAnchor constraintEqualToAnchor:cell.centerYAnchor],
-        
         [switchControl.trailingAnchor constraintEqualToAnchor:cell.trailingAnchor constant:-16],
         [switchControl.centerYAnchor constraintEqualToAnchor:cell.centerYAnchor]
     ]];
