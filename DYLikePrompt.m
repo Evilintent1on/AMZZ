@@ -115,7 +115,7 @@ static __weak DYLikePrompt *DYLikeVisiblePrompt;
     buttonContainer.translatesAutoresizingMaskIntoConstraints = NO;
     [self.panel addSubview:buttonContainer];
 
-    // “取消”按钮（半透明灰色）
+    // “取消”按钮（保持半透明灰色）
     UIButton *cancelButton = [UIButton buttonWithType:UIButtonTypeSystem];
     [cancelButton setTitle:@"取消" forState:UIControlStateNormal];
     [cancelButton setTitleColor:[UIColor colorWithWhite:0 alpha:0.5] forState:UIControlStateNormal];
@@ -131,17 +131,17 @@ static __weak DYLikePrompt *DYLikeVisiblePrompt;
     verticalDivider.backgroundColor = [UIColor colorWithWhite:0 alpha:0.1];
     [buttonContainer addSubview:verticalDivider];
 
-    // “确认”按钮（抖音红：#FE2C55）
+    // “确认” / “确认取消” 按钮（纯黑色字体）
     UIButton *confirmButton = [UIButton buttonWithType:UIButtonTypeSystem];
     [confirmButton setTitle:confirmTitle forState:UIControlStateNormal];
-    [confirmButton setTitleColor:[UIColor colorWithRed:254/255.0 green:44/255.0 blue:85/255.0 alpha:1.0] forState:UIControlStateNormal];
+    [confirmButton setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
     confirmButton.backgroundColor = [UIColor clearColor];
     confirmButton.titleLabel.font = [UIFont systemFontOfSize:16 weight:UIFontWeightMedium];
     confirmButton.translatesAutoresizingMaskIntoConstraints = NO;
     [confirmButton addTarget:self action:@selector(confirm) forControlEvents:UIControlEventTouchUpInside];
     [buttonContainer addSubview:confirmButton];
 
-    // 布局约束：严格设定宽度 280pt，高度 140pt
+    // 布局约束：固定宽度 280pt，高度 140pt
     NSLayoutConstraint *preferredWidth = [self.panel.widthAnchor constraintEqualToConstant:280];
     preferredWidth.priority = 999;
 
@@ -155,19 +155,19 @@ static __weak DYLikePrompt *DYLikeVisiblePrompt;
         [self.panel.centerXAnchor constraintEqualToAnchor:self.safeAreaLayoutGuide.centerXAnchor],
         [self.panel.centerYAnchor constraintEqualToAnchor:self.safeAreaLayoutGuide.centerYAnchor],
 
-        // 按钮容器约束（固定在底部，高度 44pt）
+        // 按钮容器约束（高度 44pt）
         [buttonContainer.leadingAnchor constraintEqualToAnchor:self.panel.leadingAnchor],
         [buttonContainer.trailingAnchor constraintEqualToAnchor:self.panel.trailingAnchor],
         [buttonContainer.bottomAnchor constraintEqualToAnchor:self.panel.bottomAnchor],
         [buttonContainer.heightAnchor constraintEqualToConstant:44],
 
-        // 横向分割线（贴在按钮容器上方）
+        // 横向分割线
         [horizontalDivider.bottomAnchor constraintEqualToAnchor:buttonContainer.topAnchor],
         [horizontalDivider.leadingAnchor constraintEqualToAnchor:self.panel.leadingAnchor],
         [horizontalDivider.trailingAnchor constraintEqualToAnchor:self.panel.trailingAnchor],
         [horizontalDivider.heightAnchor constraintEqualToConstant:0.5],
 
-        // 内容区域约束（在 96pt 的上半部空间内居中）
+        // 内容区域约束（垂直居中于 96pt 的上半空间）
         [content.centerYAnchor constraintEqualToAnchor:self.panel.topAnchor constant:48],
         [content.leadingAnchor constraintEqualToAnchor:self.panel.leadingAnchor constant:16],
         [content.trailingAnchor constraintEqualToAnchor:self.panel.trailingAnchor constant:-16],
