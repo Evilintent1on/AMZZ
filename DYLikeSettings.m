@@ -1,7 +1,49 @@
 #import "DYLikeSettings.h"
 #import "DYLikeCore.h"
+#import <UIKit/UIKit.h>
 
-@interface DYLikeSettingsViewController ()
+static NSString *const kDYLikePreferenceDomain = @"com.apple.Preferences";
+static NSString *const kDYLikeEnabledLikeKey = @"DYLikeEnabled_Like";
+static NSString *const kDYLikeEnabledFavoriteKey = @"DYLikeEnabled_Favorite";
+static NSString *const kDYLikeEnabledFollowKey = @"DYLikeEnabled_Follow";
+
+static BOOL DYLikeReadBool(NSString *key, BOOL defaultValue) {
+    Boolean keyExists = false;
+    Boolean value = CFPreferencesGetAppBooleanValue((__bridge CFStringRef)key, (__bridge CFStringRef)kDYLikePreferenceDomain, &keyExists);
+    return keyExists ? (BOOL)value : defaultValue;
+}
+
+static void DYLikeWriteBool(NSString *key, BOOL value) {
+    CFPreferencesSetAppValue((__bridge CFStringRef)key, value ? kCFBooleanTrue : kCFBooleanFalse, (__bridge CFStringRef)kDYLikePreferenceDomain);
+    CFPreferencesAppSynchronize((__bridge CFStringRef)kDYLikePreferenceDomain);
+}
+
+BOOL DYLikeIsLikeConfirmationEnabled(void) {
+    return DYLikeReadBool(kDYLikeEnabledLikeKey, YES);
+}
+
+BOOL DYLikeIsFavoriteConfirmationEnabled(void) {
+    return DYLikeReadBool(kDYLikeEnabledFavoriteKey, YES);
+}
+
+BOOL DYLikeIsFollowConfirmationEnabled(void) {
+    return DYLikeReadBool(kDYLikeEnabledFollowKey, YES);
+}
+
+void DYLikeSetLikeConfirmationEnabled(BOOL enabled) {
+    DYLikeWriteBool(kDYLikeEnabledLikeKey, enabled);
+}
+
+void DYLikeSetFavoriteConfirmationEnabled(BOOL enabled) {
+    DYLikeWriteBool(kDYLikeEnabledFavoriteKey, enabled);
+}
+
+void DYLikeSetFollowConfirmationEnabled(BOOL enabled) {
+    DYLikeWriteBool(kDYLikeEnabledFollowKey, enabled);
+}
+
+@interface DYLikeSettingsViewController () <UITableViewDelegate, UITableViewDataSource>
+@property(nonatomic, strong) UITableView *tableView;
 @end
 
 @implementation DYLikeSettingsViewController
@@ -9,84 +51,51 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.title = @"DYLike 设置";
-    self.view.backgroundColor = [UIColor systemGroupedBackgroundColor];
-    [self setupUI];
+    self.view.backgroundColor = [UIColor systemBackgroundColor];
+
+    self.tableView = [[UITableView alloc] initWithFrame:self.view.bounds style:UITableViewStyleGrouped];
+    self.tableView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    self.tableView.delegate = self;
+    self.tableView.dataSource = self;
+    [self.view addSubview:self.tableView];
 }
 
-- (void)setupUI {
-    UIScrollView *scrollView = [[UIScrollView alloc] initWithFrame:self.view.bounds];
-    scrollView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-    [self.view addSubview:scrollView];
-
-    UIStackView *stackView = [UIStackView new];
-    stackView.axis = UILayoutConstraintAxisVertical;
-    stackView.spacing = 16;
-    stackView.translatesAutoresizingMaskIntoConstraints = NO;
-    [scrollView addSubview:stackView];
-
-    [NSLayoutConstraint activateConstraints:@[
-        [stackView.topAnchor constraintEqualToAnchor:scrollView.topAnchor constant:16],
-        [stackView.leadingAnchor constraintEqualToAnchor:scrollView.leadingAnchor constant:16],
-        [stackView.trailingAnchor constraintEqualToAnchor:scrollView.trailingAnchor constant:-16],
-        [stackView.widthAnchor constraintEqualToAnchor:scrollView.widthAnchor constant:-32],
-        [stackView.bottomAnchor constraintEqualToAnchor:scrollView.bottomAnchor constant:-16]
-    ]];
-
-    [stackView addArrangedSubview:[self createSwitchCellWithTitle:@"开启点赞确认" 
-                                                           action:@selector(likeSwitchChanged:) 
-                                                           isOn:DYLikeIsLikeConfirmationEnabled()]];
-    [stackView addArrangedSubview:[self createSwitchCellWithTitle:@"开启收藏确认" 
-                                                           action:@selector(favoriteSwitchChanged:) 
-                                                           isOn:DYLikeIsFavoriteConfirmationEnabled()]];
-    [stackView addArrangedSubview:[self createSwitchCellWithTitle:@"开启关注确认" 
-                                                           action:@selector(followSwitchChanged:) 
-                                                           isOn:DYLikeIsFollowConfirmationEnabled()]];
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
+    return 1;
 }
 
-- (UIView *)createSwitchCellWithTitle:(NSString *)title action:(SEL)action isOn:(BOOL)isOn {
-    UIView *cell = [UIView new];
-    cell.backgroundColor = [UIColor secondarySystemGroupedBackgroundColor];
-    cell.layer.cornerRadius = 10;
-    cell.layer.masksToBounds = YES;
-
-    UILabel *label = [UILabel new];
-    label.text = title;
-    label.font = [UIFont systemFontOfSize:16 weight:UIFontWeightRegular];
-    label.textColor = [UIColor labelColor];
-    label.translatesAutoresizingMaskIntoConstraints = NO;
-    [cell addSubview:label];
-
-    UISwitch *switchControl = [UISwitch new];
-    switchControl.on = isOn;
-    
-    // 强制使用 iOS 系统默认绿色
-    switchControl.onTintColor = [UIColor systemGreenColor];
-    
-    [switchControl addTarget:self action:action forControlEvents:UIControlEventValueChanged];
-    switchControl.translatesAutoresizingMaskIntoConstraints = NO;
-    [cell addSubview:switchControl];
-
-    [NSLayoutConstraint activateConstraints:@[
-        [cell.heightAnchor constraintEqualToConstant:50],
-        [label.leadingAnchor constraintEqualToAnchor:cell.leadingAnchor constant:16],
-        [label.centerYAnchor constraintEqualToAnchor:cell.centerYAnchor],
-        [switchControl.trailingAnchor constraintEqualToAnchor:cell.trailingAnchor constant:-16],
-        [switchControl.centerYAnchor constraintEqualToAnchor:cell.centerYAnchor]
-    ]];
-
-    return cell;
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    return 3;
 }
 
-- (void)likeSwitchChanged:(UISwitch *)sender {
-    DYLikeSetLikeConfirmationEnabled(sender.isOn);
+- (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
+    return @"功能开关";
 }
 
-- (void)favoriteSwitchChanged:(UISwitch *)sender {
-    DYLikeSetFavoriteConfirmationEnabled(sender.isOn);
+- (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
+    return @"开启后，抖音对应操作会先显示确认弹窗；设置修改后立即生效。";
 }
 
-- (void)followSwitchChanged:(UISwitch *)sender {
-    DYLikeSetFollowConfirmationEnabled(sender.isOn);
-}
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    static NSString *cellID = @"DYLikeSettingsCell";
+    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:cellID];
+    if (!cell) {
+        cell = [[UITableViewCell alloc] initWithStyle:UITableView问题出在之前直接全量覆盖文件时，破坏了原作者在 `DYLikeSettings.h` 或 `DYLikeCore.h` 中定义的原生函数名和结构。
 
-@end
+为了让你无需反复测试，这里提供**最小化精准修改方法**。由于你原有的代码结构能成功编译，你**不需要替换整个文件**，只需改动 `DYLikeSettings.m` 里的 **2 行代码**（或直接删除自定义颜色逻辑）。
+
+---
+
+### 精准修改指引
+
+请在你的 **`DYLikeSettings.m`** 中定位到控制开关颜色的位置（在文件中搜索 `onTintColor`）：
+
+#### 1. 找到原始代码中类似下面的逻辑（原作者给开关设置颜色的地方）：
+
+```objc
+// ❌ 原始代码中将点赞设为红/收藏设为黄/关注设为灰色的部分
+if (...) {
+    switchView.onTintColor = [UIColor colorWithRed:...]; 
+} else if (...) {
+    switchView.onTintColor = [UIColor colorWithRed:...]; 
+}
