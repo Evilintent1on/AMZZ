@@ -64,19 +64,17 @@ static __weak DYLikePrompt *DYLikeVisiblePrompt;
     [self addSubview:scrim];
 
     NSString *verb = action == DYLikeActionLike ? @"点赞" : action == DYLikeActionFavorite ? @"收藏" : @"关注";
-    
+
     NSString *title = @"";
     NSString *confirmTitle = @"确认";
-    
+
     if (intent == DYLikeIntentRemove) {
-        // 第二次点击（取消）：是否取消收藏，不加问号
         title = [NSString stringWithFormat:@"是否取消%@", verb];
         confirmTitle = @"确认取消";
     } else if (intent == DYLikeIntentToggle) {
         title = [NSString stringWithFormat:@"是否更改%@状态", verb];
         confirmTitle = @"确认更改";
     } else {
-        // 第一次点击（确认）：保持 是否确认收藏
         title = [NSString stringWithFormat:@"是否确认%@", verb];
         confirmTitle = @"确认";
     }
