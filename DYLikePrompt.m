@@ -64,19 +64,14 @@ static __weak DYLikePrompt *DYLikeVisiblePrompt;
     [self addSubview:scrim];
 
     NSString *verb = action == DYLikeActionLike ? @"点赞" : action == DYLikeActionFavorite ? @"收藏" : @"关注";
-
-    NSString *title = @"";
+    NSString *title = [NSString stringWithFormat:@"是否确认%@", verb];
     NSString *confirmTitle = @"确认";
-
     if (intent == DYLikeIntentRemove) {
         title = [NSString stringWithFormat:@"是否取消%@", verb];
         confirmTitle = @"确认取消";
     } else if (intent == DYLikeIntentToggle) {
         title = [NSString stringWithFormat:@"是否更改%@状态", verb];
         confirmTitle = @"确认更改";
-    } else {
-        title = [NSString stringWithFormat:@"是否确认%@", verb];
-        confirmTitle = @"确认";
     }
 
     self.panel = [UIView new];
@@ -87,6 +82,7 @@ static __weak DYLikePrompt *DYLikeVisiblePrompt;
     self.panel.clipsToBounds = YES;
     [self addSubview:self.panel];
 
+    // 上半部分内容容器
     UIStackView *content = [UIStackView new];
     content.axis = UILayoutConstraintAxisVertical;
     content.spacing = 4;
@@ -108,15 +104,18 @@ static __weak DYLikePrompt *DYLikeVisiblePrompt;
         [content addArrangedSubview:nameLabel];
     }
 
+    // 横向主分割线（浅灰色）
     UIView *horizontalDivider = [UIView new];
     horizontalDivider.translatesAutoresizingMaskIntoConstraints = NO;
     horizontalDivider.backgroundColor = [UIColor colorWithWhite:0 alpha:0.1];
     [self.panel addSubview:horizontalDivider];
 
+    // 底部按钮区域（无背景色）
     UIView *buttonContainer = [UIView new];
     buttonContainer.translatesAutoresizingMaskIntoConstraints = NO;
     [self.panel addSubview:buttonContainer];
 
+    // “取消”按钮（保持半透明灰色）
     UIButton *cancelButton = [UIButton buttonWithType:UIButtonTypeSystem];
     [cancelButton setTitle:@"取消" forState:UIControlStateNormal];
     [cancelButton setTitleColor:[UIColor colorWithWhite:0 alpha:0.5] forState:UIControlStateNormal];
@@ -126,11 +125,13 @@ static __weak DYLikePrompt *DYLikeVisiblePrompt;
     [cancelButton addTarget:self action:@selector(cancel) forControlEvents:UIControlEventTouchUpInside];
     [buttonContainer addSubview:cancelButton];
 
+    // 纵向分割线
     UIView *verticalDivider = [UIView new];
     verticalDivider.translatesAutoresizingMaskIntoConstraints = NO;
     verticalDivider.backgroundColor = [UIColor colorWithWhite:0 alpha:0.1];
     [buttonContainer addSubview:verticalDivider];
 
+    // “确认” / “确认取消” 按钮（纯黑色字体）
     UIButton *confirmButton = [UIButton buttonWithType:UIButtonTypeSystem];
     [confirmButton setTitle:confirmTitle forState:UIControlStateNormal];
     [confirmButton setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
@@ -140,6 +141,7 @@ static __weak DYLikePrompt *DYLikeVisiblePrompt;
     [confirmButton addTarget:self action:@selector(confirm) forControlEvents:UIControlEventTouchUpInside];
     [buttonContainer addSubview:confirmButton];
 
+    // 布局约束：固定宽度 280pt，高度 140pt
     NSLayoutConstraint *preferredWidth = [self.panel.widthAnchor constraintEqualToConstant:280];
     preferredWidth.priority = 999;
 
@@ -153,30 +155,36 @@ static __weak DYLikePrompt *DYLikeVisiblePrompt;
         [self.panel.centerXAnchor constraintEqualToAnchor:self.safeAreaLayoutGuide.centerXAnchor],
         [self.panel.centerYAnchor constraintEqualToAnchor:self.safeAreaLayoutGuide.centerYAnchor],
 
+        // 按钮容器约束（高度 44pt）
         [buttonContainer.leadingAnchor constraintEqualToAnchor:self.panel.leadingAnchor],
         [buttonContainer.trailingAnchor constraintEqualToAnchor:self.panel.trailingAnchor],
         [buttonContainer.bottomAnchor constraintEqualToAnchor:self.panel.bottomAnchor],
         [buttonContainer.heightAnchor constraintEqualToConstant:44],
 
+        // 横向分割线
         [horizontalDivider.bottomAnchor constraintEqualToAnchor:buttonContainer.topAnchor],
         [horizontalDivider.leadingAnchor constraintEqualToAnchor:self.panel.leadingAnchor],
         [horizontalDivider.trailingAnchor constraintEqualToAnchor:self.panel.trailingAnchor],
         [horizontalDivider.heightAnchor constraintEqualToConstant:0.5],
 
+        // 内容区域约束（垂直居中于 96pt 的上半空间）
         [content.centerYAnchor constraintEqualToAnchor:self.panel.topAnchor constant:48],
         [content.leadingAnchor constraintEqualToAnchor:self.panel.leadingAnchor constant:16],
         [content.trailingAnchor constraintEqualToAnchor:self.panel.trailingAnchor constant:-16],
 
+        // 取消按钮
         [cancelButton.leadingAnchor constraintEqualToAnchor:buttonContainer.leadingAnchor],
         [cancelButton.topAnchor constraintEqualToAnchor:buttonContainer.topAnchor],
         [cancelButton.bottomAnchor constraintEqualToAnchor:buttonContainer.bottomAnchor],
         [cancelButton.trailingAnchor constraintEqualToAnchor:verticalDivider.leadingAnchor],
 
+        // 纵向分割线
         [verticalDivider.centerXAnchor constraintEqualToAnchor:buttonContainer.centerXAnchor],
         [verticalDivider.topAnchor constraintEqualToAnchor:buttonContainer.topAnchor],
         [verticalDivider.bottomAnchor constraintEqualToAnchor:buttonContainer.bottomAnchor],
         [verticalDivider.widthAnchor constraintEqualToConstant:0.5],
 
+        // 确认按钮
         [confirmButton.leadingAnchor constraintEqualToAnchor:verticalDivider.trailingAnchor],
         [confirmButton.topAnchor constraintEqualToAnchor:buttonContainer.topAnchor],
         [confirmButton.bottomAnchor constraintEqualToAnchor:buttonContainer.bottomAnchor],
