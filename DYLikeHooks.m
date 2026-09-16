@@ -79,7 +79,6 @@ static BOOL DYIsBlock(id object) {
     return cls && [object isKindOfClass:cls];
 }
 
-// 保存延迟执行的参数，并复制栈上的回调。
 static id DYBox(id object) {
     return DYIsBlock(object) ? [object copy] : object ?: NSNull.null;
 }
@@ -95,7 +94,7 @@ struct DYBlockLayout {
     void (*invoke)(void *, ...);
     void *descriptor;
 };
-// 读取回调签名，供取消操作时校验参数类型。
+
 static NSMethodSignature *DYBlockSignature(id block) {
     if (!DYIsBlock(block)) return nil;
     struct DYBlockLayout *layout = (__bridge void *)block;
@@ -106,7 +105,6 @@ static NSMethodSignature *DYBlockSignature(id block) {
     return signature ? [NSMethodSignature signatureWithObjCTypes:signature] : nil;
 }
 
-// 按回调参数类型返回取消结果。
 static dispatch_block_t DYCancelHandler(id callback, const DYHook *hook, id subject) {
     NSMethodSignature *signature = DYBlockSignature(callback);
     if (!signature || signature.methodReturnType[0] != 'v') return nil;
@@ -134,7 +132,6 @@ static dispatch_block_t DYCancelHandler(id callback, const DYHook *hook, id subj
     return nil;
 }
 
-// 根据已确认的入口选择取消关注执行方法。
 static dispatch_block_t DYUnfollowOperation(const DYHook *hook, id owner, NSArray *arguments) {
     if (hook->action != DYLikeActionFollow || hook->intent == DYLikeIntentAdd) return nil;
     if (strcmp(hook->className, "AWEProfileFollowAreaFollowComponent") == 0 &&
@@ -214,9 +211,23 @@ static void DYGate(const DYHook *hook, id owner, NSArray *arguments, dispatch_bl
         operation();
         return;
     }
+
+    DYLikeIntent currentIntent = hook->intent;
+    if (hook->action == DYLikeActionFavorite) {
+        BOOL isFavorited = NO;
+        if ([owner respondsToSelector:NSSelectorFromString(@"isSelected")]) {
+            isFavorited = [DYLikeRead(owner, @"isSelected") boolValue];
+        } else if (subject && [subject respondsToSelector:NSSelectorFromString(@"isFavorite")]) {
+            isFavorited = [DYLikeRead(subject, @"isFavorite") boolValue];
+        } else if (subject && [subject respondsToSelector:NSSelectorFromString(@"userFavorite")]) {
+            isFavorited = [DYLikeRead(subject, @"userFavorite") boolValue];
+        }
+        currentIntent = isFavorited ? DYLikeIntentRemove : DYLikeIntentAdd;
+    }
+
     dispatch_block_t confirmedUnfollow = DYUnfollowOperation(hook, owner, arguments);
     if (DYLikeIsReplaying(hook->action)) {
-        DYLikeGuard(hook->action, hook->intent, owner, subject, operation, nil, confirmedUnfollow);
+        DYLikeGuard(hook->action, currentIntent, owner, subject, operation, nil, confirmedUnfollow);
         return;
     }
     id callback = hook->completion == -2 ? DYLikeRead(subject, @"completionBlock") : DYArg(arguments, hook->completion);
@@ -224,10 +235,9 @@ static void DYGate(const DYHook *hook, id owner, NSArray *arguments, dispatch_bl
     if (callback && !cancellation) {
         NSLog(@"[DYSecondaryConfirmation] Unsupported completion: %s %s", hook->className, hook->selectorName);
     }
-    DYLikeGuard(hook->action, hook->intent, owner, subject, operation, cancellation, confirmedUnfollow);
+    DYLikeGuard(hook->action, currentIntent, owner, subject, operation, cancellation, confirmedUnfollow);
 }
 
-// 按原方法签名生成拦截函数。
 static IMP DYReplacement(const DYHook *hook, SEL selector, IMP original) {
 #define ARG(n) DYArg(args, n)
 #define GATE(...) DYGate(hook, owner, args, ^{ __VA_ARGS__; })
@@ -372,7 +382,14 @@ static void DYInstallFeedButtonHook(void) {
                 if (!button) return;
                 DYLikeActionType action;
                 if (!DYFeedAction(button, &action) || !DYLikeEnabled(action)) { block(); return; }
-                DYLikeGuard(action, DYLikeIntentToggle, button, nil, ^{
+                
+                DYLikeIntent intent = DYLikeIntentToggle;
+                if (action == DYLikeActionFavorite && [button respondsToSelector:NSSelectorFromString(@"isSelected")]) {
+                    BOOL isSelected = [DYLikeRead(button, @"isSelected") boolValue];
+                    intent = isSelected ? DYLikeIntentRemove : DYLikeIntentAdd;
+                }
+
+                DYLikeGuard(action, intent, button, nil, ^{
                     if (((id (*)(id, SEL))original)(button, selector) != block) {
                         [DYLikePrompt showStaleNotice];
                         return;
