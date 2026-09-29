@@ -2,25 +2,6 @@
 #import "../Core/DYLikeCore.h"
 #import <objc/runtime.h>
 
-// iOS 设置风格的行首图标：圆角矩形色块 + 白色符号。
-static UIImage *DYLikeSettingsIcon(NSString *symbol, UIColor *color) {
-    CGFloat edge = 29;
-    UIGraphicsImageRendererFormat *format = [UIGraphicsImageRendererFormat defaultFormat];
-    format.opaque = NO;
-    UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc]
-        initWithSize:CGSizeMake(edge, edge) format:format];
-    return [renderer imageWithActions:^(UIGraphicsImageRendererContext *context) {
-        [color setFill];
-        [[UIBezierPath bezierPathWithRoundedRect:CGRectMake(0, 0, edge, edge) cornerRadius:7] fill];
-        UIImage *glyph = [UIImage systemImageNamed:symbol withConfiguration:
-            [UIImageSymbolConfiguration configurationWithPointSize:15 weight:UIFontWeightSemibold]];
-        glyph = [glyph imageWithTintColor:UIColor.whiteColor];
-        CGSize glyphSize = glyph.size;
-        [glyph drawInRect:CGRectMake((edge - glyphSize.width) / 2, (edge - glyphSize.height) / 2,
-                                     glyphSize.width, glyphSize.height)];
-    }];
-}
-
 @implementation DYLikeSettingsViewController
 
 - (instancetype)init {
@@ -29,7 +10,7 @@ static UIImage *DYLikeSettingsIcon(NSString *symbol, UIColor *color) {
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    self.title = @"二次确认";
+    self.title = @"AMZZ";
     self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
     self.tableView.backgroundColor = UIColor.systemGroupedBackgroundColor;
     self.tableView.separatorColor = UIColor.separatorColor;
@@ -96,11 +77,9 @@ static UIImage *DYLikeSettingsIcon(NSString *symbol, UIColor *color) {
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
     static NSArray<NSString *> *titles;
-    static NSArray<NSString *> *symbols;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        titles = @[@"点赞", @"收藏", @"关注", @"评论点赞", @"评论点踩"];
-        symbols = @[@"heart.fill", @"bookmark.fill", @"person.badge.plus", @"hand.thumbsup.fill", @"hand.thumbsdown.fill"];
+        titles = @[@"启用点赞二次确认", @"启用收藏二次确认", @"启用关注二次确认", @"启用评论点赞二次确认", @"启用评论点踩二次确认"];
     });
 
     NSUInteger index = (NSUInteger)indexPath.row;
@@ -111,13 +90,12 @@ static UIImage *DYLikeSettingsIcon(NSString *symbol, UIColor *color) {
     cell.textLabel.adjustsFontForContentSizeCategory = YES;
     cell.textLabel.textColor = UIColor.labelColor;
     cell.backgroundColor = UIColor.secondarySystemGroupedBackgroundColor;
-    cell.imageView.image = DYLikeSettingsIcon(symbols[index], DYLikeAccent((DYLikeActionType)index));
     cell.selectionStyle = UITableViewCellSelectionStyleNone;
 
     UISwitch *toggle = [UISwitch new];
     toggle.on = DYLikeEnabled((DYLikeActionType)index);
     toggle.tag = (NSInteger)index;
-    toggle.accessibilityLabel = [titles[index] stringByAppendingString:@"二次确认"];
+    toggle.accessibilityLabel = titles[index];
     [toggle addTarget:self action:@selector(toggleChanged:) forControlEvents:UIControlEventValueChanged];
     cell.accessoryView = toggle;
     return cell;
@@ -219,7 +197,7 @@ void DYLikeInstallSettingsHook(void) {
 
         id item = [itemClass new];
         BOOL valid = DYLikeSet(item, @"identifier", @"DYSecondaryConfirmation.Settings");
-        valid &= DYLikeSet(item, @"title", @"二次确认");
+        valid &= DYLikeSet(item, @"title", @"AMZZ");
         valid &= DYLikeSet(item, @"cellType", @26);
         valid &= DYLikeSet(item, @"cellTappedBlock", ^{ DYLikeOpenSettings(); });
         DYLikeSet(item, @"detail", DYLikeVersion);
