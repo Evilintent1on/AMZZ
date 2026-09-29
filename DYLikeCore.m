@@ -3,31 +3,41 @@
 #import <objc/runtime.h>
 #import <objc/message.h>
 
-NSString *const DYLikeVersion = @"1.0-1";
+NSString *const DYLikeVersion = @"2.0.0";
 NSString *const DYLikeRepositoryURL = @"https://github.com/jijiang2333/DYSecondaryConfirmation";
 NSString *const DYLikeAuthor = @"JiJiang778";
 NSString *const DYLikeLikeEnabledKey = @"DYLikeConfirmLike";
 NSString *const DYLikeFavoriteEnabledKey = @"DYLikeConfirmFavorite";
 NSString *const DYLikeFollowEnabledKey = @"DYLikeConfirmFollow";
+NSString *const DYLikeCommentLikeEnabledKey = @"DYLikeConfirmCommentLike";
+NSString *const DYLikeCommentDislikeEnabledKey = @"DYLikeConfirmCommentDislike";
 NSNotificationName const DYLikeThemeDidChangeNotification = @"DYLikeThemeDidChange";
 
-static __thread NSUInteger DYLikeReplayDepth[3];
-static __thread DYLikeIntent DYLikeReplayIntent[3];
+static __thread NSUInteger DYLikeReplayDepth[DYLikeActionCount];
+static __thread DYLikeIntent DYLikeReplayIntent[DYLikeActionCount];
 
 void DYLikeEnsureDefaults(void) {
     [NSUserDefaults.standardUserDefaults registerDefaults:@{
-        DYLikeLikeEnabledKey: @NO, DYLikeFavoriteEnabledKey: @NO, DYLikeFollowEnabledKey: @NO
+        DYLikeLikeEnabledKey: @NO, DYLikeFavoriteEnabledKey: @NO, DYLikeFollowEnabledKey: @NO,
+        DYLikeCommentLikeEnabledKey: @NO, DYLikeCommentDislikeEnabledKey: @NO
     }];
 }
 
 BOOL DYLikeEnabled(DYLikeActionType action) {
-    NSString *key = action == DYLikeActionLike ? DYLikeLikeEnabledKey :
-                    action == DYLikeActionFavorite ? DYLikeFavoriteEnabledKey : DYLikeFollowEnabledKey;
+    NSString *key;
+    switch (action) {
+        case DYLikeActionLike: key = DYLikeLikeEnabledKey; break;
+        case DYLikeActionFavorite: key = DYLikeFavoriteEnabledKey; break;
+        case DYLikeActionFollow: key = DYLikeFollowEnabledKey; break;
+        case DYLikeActionCommentLike: key = DYLikeCommentLikeEnabledKey; break;
+        case DYLikeActionCommentDislike: key = DYLikeCommentDislikeEnabledKey; break;
+        default: return NO;
+    }
     return [NSUserDefaults.standardUserDefaults boolForKey:key];
 }
 
 BOOL DYLikeIsReplaying(DYLikeActionType action) {
-    return action <= DYLikeActionFollow && DYLikeReplayDepth[action] > 0;
+    return action < DYLikeActionCount && DYLikeReplayDepth[action] > 0;
 }
 
 id DYLikeRead(id object, NSString *key) {
@@ -63,9 +73,12 @@ UIWindow *DYLikeActiveWindow(void) {
 
 UIColor *DYLikeAccent(DYLikeActionType action) {
     switch (action) {
-        case DYLikeActionLike: return [UIColor colorWithRed:0.86 green:0.12 blue:0.26 alpha:1];
+        case DYLikeActionLike:
+        case DYLikeActionCommentLike: return [UIColor colorWithRed:0.86 green:0.12 blue:0.26 alpha:1];
         case DYLikeActionFavorite: return [UIColor colorWithRed:0.65 green:0.40 blue:0.04 alpha:1];
         case DYLikeActionFollow: return [UIColor colorWithRed:0.02 green:0.49 blue:0.43 alpha:1];
+        case DYLikeActionCommentDislike: return [UIColor colorWithRed:0.28 green:0.40 blue:0.61 alpha:1];
+        case DYLikeActionCount: break;
     }
     return UIColor.systemBlueColor;
 }
@@ -135,7 +148,26 @@ static NSString *DYLikeString(id value) {
     return nil;
 }
 
-// 从操作对象和页面上下文查找对应的用户或作品模型。
+static BOOL DYLikeIsCommentAction(DYLikeActionType action) {
+    return action == DYLikeActionCommentLike || action == DYLikeActionCommentDislike;
+}
+
+// 查找操作对象实际显示的视图。
+static UIView *DYLikeSourceView(id owner) {
+    if ([owner isKindOfClass:UIView.class]) return owner;
+    id view = DYLikeRead(owner, @"view");
+    if ([view isKindOfClass:UIView.class]) return view;
+    for (NSUInteger i = 0; owner && i < 16; i++) {
+        view = DYLikeRead(DYLikeRead(owner, @"rl_cachedVirtualView"), @"renderedView");
+        if ([view isKindOfClass:UIView.class]) return view;
+        view = DYLikeRead(DYLikeRead(owner, @"delegate"), @"mountedView");
+        if ([view isKindOfClass:UIView.class]) return view;
+        owner = DYLikeRead(owner, @"rl_superComponent");
+    }
+    return nil;
+}
+
+// 从操作对象和页面上下文查找对应的用户、作品或评论模型。
 static id DYLikeFindModel(id root, DYLikeActionType action, NSUInteger depth, NSHashTable *visited) {
     if (!root || depth > 4 || [visited containsObject:root]) return nil;
     [visited addObject:root];
@@ -152,7 +184,9 @@ static id DYLikeFindModel(id root, DYLikeActionType action, NSUInteger depth, NS
         }
         if (DYLikeRead(root, @"userID") || DYLikeRead(root, @"userIDStr") || DYLikeRead(root, @"userId") ||
             DYLikeRead(root, @"secUserID") || DYLikeRead(root, @"secUserId") || DYLikeRead(root, @"uid")) return root;
-    } else if (DYLikeRead(root, @"userDigged") || DYLikeRead(root, @"isCollected") ||
+    } else if (DYLikeIsCommentAction(action)) {
+        if (DYLikeRead(root, @"commentID")) return root;
+    } else if (DYLikeRead(root, @"userDigged") || DYLikeRead(root, @"userFavorited") || DYLikeRead(root, @"isCollected") ||
                DYLikeRead(root, @"commentID") || DYLikeRead(root, @"roomID")) {
         return root;
     }
@@ -160,8 +194,10 @@ static id DYLikeFindModel(id root, DYLikeActionType action, NSUInteger depth, NS
         @[@"userModel", @"followContext", @"headerContext", @"context", @"relationView",
           @"currentOwner", @"currentUser", @"user", @"userProfile", @"viewModel", @"store",
           @"realShowAuthor", @"author", @"owner", @"model", @"aweme", @"awemeModel", @"room", @"data"] :
-        @[@"comment", @"aweme", @"awemeModel", @"model", @"viewModel", @"interactor", @"context",
-          @"cellModel", @"room", @"store", @"data"];
+        DYLikeIsCommentAction(action) ?
+        @[@"commentModel", @"comment", @"detailModel", @"model", @"viewModel", @"cellModel", @"data", @"context"] :
+        @[@"aweme", @"awemeModel", @"model", @"viewModel", @"interactor", @"context",
+          @"cellModel", @"room", @"store", @"data", @"comment"];
     for (NSString *key in keys) {
         id model = DYLikeFindModel(DYLikeRead(root, key), action, depth + 1, visited);
         if (model) return model;
@@ -172,12 +208,11 @@ static id DYLikeFindModel(id root, DYLikeActionType action, NSUInteger depth, NS
 static id DYLikeModel(id root, DYLikeActionType action) {
     id model = DYLikeFindModel(root, action, 0, [NSHashTable hashTableWithOptions:NSPointerFunctionsObjectPointerPersonality]);
     if (model) return model;
-    if ([root isKindOfClass:UIResponder.class]) {
-        UIResponder *responder = [root nextResponder];
-        for (NSUInteger i = 0; responder && i < 8; i++, responder = responder.nextResponder) {
-            model = DYLikeFindModel(responder, action, 0, [NSHashTable hashTableWithOptions:NSPointerFunctionsObjectPointerPersonality]);
-            if (model) return model;
-        }
+    UIResponder *responder = DYLikeIsCommentAction(action) ? DYLikeSourceView(root) : nil;
+    if (!responder && [root isKindOfClass:UIResponder.class]) responder = [root nextResponder];
+    for (NSUInteger i = 0; responder && i < 24; i++, responder = responder.nextResponder) {
+        model = DYLikeFindModel(responder, action, 0, [NSHashTable hashTableWithOptions:NSPointerFunctionsObjectPointerPersonality]);
+        if (model) return model;
     }
     return nil;
 }
@@ -212,8 +247,10 @@ static NSNumber *DYLikeState(id model, DYLikeActionType action) {
         }
         return nil;
     }
-    NSArray *keys = action == DYLikeActionLike ? @[@"userDigged", @"isLiked"] :
-                    @[@"isCollected", @"collectStatus", @"isFavorite"];
+    NSArray *keys = action == DYLikeActionCommentDislike ? @[@"userBuried"] :
+                    action == DYLikeActionCommentLike ? @[@"userDigged", @"isLiked", @"isDigged", @"liked"] :
+                    action == DYLikeActionLike ? @[@"userDigged", @"isLiked"] :
+                    @[@"userFavorited", @"isCollected", @"collectStatus", @"isFavorite"];
     for (NSString *key in keys) {
         id value = DYLikeRead(model, key);
         if ([value isKindOfClass:NSNumber.class]) return value;
@@ -322,8 +359,10 @@ void DYLikeGuard(DYLikeActionType action, DYLikeIntent intent, id owner, id subj
     NSString *identity = DYLikeIdentity(model);
     NSString *ownerIdentity = DYLikeIdentity(DYLikeModel(owner, action));
     NSNumber *state = DYLikeActionState(owner, model, action);
-    UIView *sourceView = [owner isKindOfClass:UIView.class] ? owner : DYLikeRead(owner, @"view");
-    if (![sourceView isKindOfClass:UIView.class]) sourceView = nil;
+    BOOL commentAction = DYLikeIsCommentAction(action);
+    DYLikeActionType oppositeAction = action == DYLikeActionCommentLike ? DYLikeActionCommentDislike : DYLikeActionCommentLike;
+    NSNumber *oppositeState = commentAction ? DYLikeState(model, oppositeAction) : nil;
+    UIView *sourceView = DYLikeSourceView(owner);
     UIWindow *sourceWindow = sourceView.window;
     DYLikeIntent effectiveIntent = intent;
     if (intent == DYLikeIntentToggle && state) {
@@ -331,7 +370,7 @@ void DYLikeGuard(DYLikeActionType action, DYLikeIntent intent, id owner, id subj
     }
     NSString *name = action == DYLikeActionFollow ?
         DYLikeString(DYLikeRead(model, @"nickname") ?: DYLikeRead(model, @"nickName")) : nil;
-    BOOL isComment = DYLikeRead(model, @"commentID") != nil;
+    BOOL isComment = commentAction || DYLikeRead(model, @"commentID") != nil;
     [DYLikePrompt presentForAction:action intent:effectiveIntent name:name isComment:isComment
                          decision:^(BOOL confirmed) {
         if (!confirmed) {
@@ -343,7 +382,8 @@ void DYLikeGuard(DYLikeActionType action, DYLikeIntent intent, id owner, id subj
                      DYLikeEqual(identity, DYLikeIdentity(current)) &&
                      DYLikeEqual(ownerIdentity, DYLikeIdentity(DYLikeModel(owner, action))) &&
                      DYLikeEqual(state, DYLikeActionState(owner, current, action)) &&
-                     (!sourceWindow || sourceView.window == sourceWindow);
+                     (!commentAction || DYLikeEqual(oppositeState, DYLikeState(current, oppositeAction))) &&
+                     (!sourceWindow || (DYLikeSourceView(owner) == sourceView && sourceView.window == sourceWindow));
         if (!valid) {
             if (cancellation) cancellation();
             [DYLikePrompt showStaleNotice];

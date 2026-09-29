@@ -64,7 +64,7 @@
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    return 3;
+    return DYLikeActionCount;
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
@@ -80,8 +80,8 @@
     static NSArray<NSString *> *symbols;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        titles = @[@"点赞", @"收藏", @"关注"];
-        symbols = @[@"heart.fill", @"bookmark.fill", @"person.badge.plus"];
+        titles = @[@"点赞", @"收藏", @"关注", @"评论点赞", @"评论点踩"];
+        symbols = @[@"heart.fill", @"bookmark.fill", @"person.badge.plus", @"heart.text.square", @"hand.thumbsdown.fill"];
     });
 
     NSUInteger index = (NSUInteger)indexPath.row;
@@ -109,8 +109,9 @@
 }
 
 - (void)toggleChanged:(UISwitch *)toggle {
-    if (toggle.tag < 0 || toggle.tag > 2) return;
-    NSArray<NSString *> *keys = @[DYLikeLikeEnabledKey, DYLikeFavoriteEnabledKey, DYLikeFollowEnabledKey];
+    if (toggle.tag < 0 || (NSUInteger)toggle.tag >= DYLikeActionCount) return;
+    NSArray<NSString *> *keys = @[DYLikeLikeEnabledKey, DYLikeFavoriteEnabledKey, DYLikeFollowEnabledKey,
+        DYLikeCommentLikeEnabledKey, DYLikeCommentDislikeEnabledKey];
     [NSUserDefaults.standardUserDefaults setBool:toggle.isOn forKey:keys[(NSUInteger)toggle.tag]];
 }
 
@@ -165,6 +166,17 @@ static BOOL DYLikeSet(id object, NSString *key, id value) {
     }
 }
 
+// 仅在抖音设置主页显示插件入口。
+static BOOL DYLikeIsMainSettingsPage(id owner, NSArray *sections) {
+    id controller = DYLikeRead(owner, @"controllerDelegate");
+    Class settingsClass = NSClassFromString(@"AWESettingsTableViewController");
+    if (controller && settingsClass && ![controller isKindOfClass:settingsClass]) return NO;
+    for (id section in sections) {
+        if ([DYLikeRead(section, @"sectionHeaderTitle") isEqual:@"账号"]) return YES;
+    }
+    return NO;
+}
+
 void DYLikeInstallSettingsHook(void) {
     static BOOL installed;
     if (installed) return;
@@ -181,6 +193,7 @@ void DYLikeInstallSettingsHook(void) {
     IMP replacement = imp_implementationWithBlock(^id(id owner) {
         id value = ((id (*)(id, SEL))original)(owner, selector);
         if (![value isKindOfClass:NSArray.class]) return value;
+        if (!DYLikeIsMainSettingsPage(owner, value)) return value;
         for (id section in value) {
             id items = DYLikeRead(section, @"itemArray");
             if (![items isKindOfClass:NSArray.class]) continue;

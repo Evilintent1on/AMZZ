@@ -63,7 +63,9 @@ static __weak DYLikePrompt *DYLikeVisiblePrompt;
     [scrim addTarget:self action:@selector(cancel) forControlEvents:UIControlEventTouchUpInside];
     [self addSubview:scrim];
 
-    NSString *verb = action == DYLikeActionLike ? @"点赞" : action == DYLikeActionFavorite ? @"收藏" : @"关注";
+    NSString *verb = action == DYLikeActionLike || action == DYLikeActionCommentLike ? @"点赞" :
+        action == DYLikeActionCommentDislike ? @"点踩" :
+        action == DYLikeActionFavorite ? @"收藏" : @"关注";
     NSString *title = [NSString stringWithFormat:@"是否确认%@", verb];
     NSString *confirmTitle = @"确认";
     if (intent == DYLikeIntentRemove) {

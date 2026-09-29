@@ -4,6 +4,9 @@ typedef NS_ENUM(NSUInteger, DYLikeActionType) {
     DYLikeActionLike,
     DYLikeActionFavorite,
     DYLikeActionFollow,
+    DYLikeActionCommentLike,
+    DYLikeActionCommentDislike,
+    DYLikeActionCount,
 };
 
 typedef NS_ENUM(NSUInteger, DYLikeIntent) {
@@ -18,6 +21,8 @@ FOUNDATION_EXPORT NSString *const DYLikeAuthor;
 FOUNDATION_EXPORT NSString *const DYLikeLikeEnabledKey;
 FOUNDATION_EXPORT NSString *const DYLikeFavoriteEnabledKey;
 FOUNDATION_EXPORT NSString *const DYLikeFollowEnabledKey;
+FOUNDATION_EXPORT NSString *const DYLikeCommentLikeEnabledKey;
+FOUNDATION_EXPORT NSString *const DYLikeCommentDislikeEnabledKey;
 FOUNDATION_EXPORT NSNotificationName const DYLikeThemeDidChangeNotification;
 
 FOUNDATION_EXPORT void DYLikeEnsureDefaults(void);
