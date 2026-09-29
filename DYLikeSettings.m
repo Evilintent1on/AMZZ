@@ -86,7 +86,7 @@
     UITableViewCell *cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault
                                                     reuseIdentifier:nil];
     cell.textLabel.text = titles[index];
-    cell.textLabel.font = [UIFont preferredFontForTextStyle:UIFontTextStyleBody];
+    cell.textLabel.font = [UIFont preferredFontForTextStyle:UIFontTextStyleSubheadline];
     cell.textLabel.adjustsFontForContentSizeCategory = YES;
     cell.textLabel.textColor = UIColor.labelColor;
     cell.backgroundColor = UIColor.secondarySystemGroupedBackgroundColor;
