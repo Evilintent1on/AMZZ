@@ -99,7 +99,6 @@
     cell.selectionStyle = UITableViewCellSelectionStyleNone;
 
     UISwitch *toggle = [UISwitch new];
-    toggle.onTintColor = DYLikeAccent((DYLikeActionType)index);
     toggle.on = DYLikeEnabled((DYLikeActionType)index);
     toggle.tag = (NSInteger)index;
     toggle.accessibilityLabel = [titles[index] stringByAppendingString:@"二次确认"];

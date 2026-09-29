@@ -66,12 +66,13 @@ static __weak DYLikePrompt *DYLikeVisiblePrompt;
     NSString *verb = action == DYLikeActionLike || action == DYLikeActionCommentLike ? @"点赞" :
         action == DYLikeActionCommentDislike ? @"点踩" :
         action == DYLikeActionFavorite ? @"收藏" : @"关注";
+    BOOL commentAction = action == DYLikeActionCommentLike || action == DYLikeActionCommentDislike;
     NSString *title = [NSString stringWithFormat:@"是否确认%@", verb];
     NSString *confirmTitle = @"确认";
     if (intent == DYLikeIntentRemove) {
         title = [NSString stringWithFormat:@"是否取消%@", verb];
         confirmTitle = @"确认取消";
-    } else if (intent == DYLikeIntentToggle) {
+    } else if (intent == DYLikeIntentToggle && !commentAction) {
         title = [NSString stringWithFormat:@"是否更改%@状态", verb];
         confirmTitle = @"确认更改";
     }
