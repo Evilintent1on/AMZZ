@@ -2,6 +2,25 @@
 #import "../Core/DYLikeCore.h"
 #import <objc/runtime.h>
 
+// iOS 设置风格的行首图标：圆角矩形色块 + 白色符号。
+static UIImage *DYLikeSettingsIcon(NSString *symbol, UIColor *color) {
+    CGFloat edge = 29;
+    UIGraphicsImageRendererFormat *format = [UIGraphicsImageRendererFormat defaultFormat];
+    format.opaque = NO;
+    UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc]
+        initWithSize:CGSizeMake(edge, edge) format:format];
+    return [renderer imageWithActions:^(UIGraphicsImageRendererContext *context) {
+        [color setFill];
+        [[UIBezierPath bezierPathWithRoundedRect:CGRectMake(0, 0, edge, edge) cornerRadius:7] fill];
+        UIImage *glyph = [UIImage systemImageNamed:symbol withConfiguration:
+            [UIImageSymbolConfiguration configurationWithPointSize:15 weight:UIFontWeightSemibold]];
+        glyph = [glyph imageWithTintColor:UIColor.whiteColor];
+        CGSize glyphSize = glyph.size;
+        [glyph drawInRect:CGRectMake((edge - glyphSize.width) / 2, (edge - glyphSize.height) / 2,
+                                     glyphSize.width, glyphSize.height)];
+    }];
+}
+
 @implementation DYLikeSettingsViewController
 
 - (instancetype)init {
@@ -81,7 +100,7 @@
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         titles = @[@"点赞", @"收藏", @"关注", @"评论点赞", @"评论点踩"];
-        symbols = @[@"heart.fill", @"bookmark.fill", @"person.badge.plus", @"heart.text.square", @"hand.thumbsdown.fill"];
+        symbols = @[@"heart.fill", @"bookmark.fill", @"person.badge.plus", @"hand.thumbsup.fill", @"hand.thumbsdown.fill"];
     });
 
     NSUInteger index = (NSUInteger)indexPath.row;
@@ -92,10 +111,7 @@
     cell.textLabel.adjustsFontForContentSizeCategory = YES;
     cell.textLabel.textColor = UIColor.labelColor;
     cell.backgroundColor = UIColor.secondarySystemGroupedBackgroundColor;
-    cell.imageView.image = [UIImage systemImageNamed:symbols[index]
-        withConfiguration:[UIImageSymbolConfiguration configurationWithPointSize:20
-            weight:UIImageSymbolWeightMedium]];
-    cell.imageView.tintColor = DYLikeAccent((DYLikeActionType)index);
+    cell.imageView.image = DYLikeSettingsIcon(symbols[index], DYLikeAccent((DYLikeActionType)index));
     cell.selectionStyle = UITableViewCellSelectionStyleNone;
 
     UISwitch *toggle = [UISwitch new];
