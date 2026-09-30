@@ -1,9 +1,11 @@
 name: Build Tweak
 
+
 on:
   push:
     branches: [ "main" ]
   workflow_dispatch:
+
 
 jobs:
   build:
@@ -11,15 +13,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+
       - name: Setup Theos
         run: |
           export THEOS=$HOME/theos
           git clone --recursive https://github.com/theos/theos.git $THEOS
           echo "THEOS=$THEOS" >> $GITHUB_ENV
 
+
       - name: Install Dependencies
         run: |
           brew install ldid dpkg make
+
 
       # 终极地毯式全覆盖：把所有可能的子文件夹全建好，把源码复制进去
       - name: 自动修正源码目录（全覆盖最终版）
@@ -31,18 +36,21 @@ jobs:
           cp *.m *.h *.inc Sources/ 2>/dev/null || true
           cp *.plist layout/ 2>/dev/null || true
 
+
       - name: 自动修正 Makefile 中的 SDK 版本
         run: |
           sed -i '' 's/16.5/latest/g' Makefile || true
           sed -i '' 's/iPhoneOS16.5/iPhoneOS17.0/g' Makefile || true
+
 
       - name: Build Tweak
         run: |
           make clean
           make package FINALPACKAGE=1
 
+
       - name: Upload DEB
         uses: actions/upload-artifact@v4
         with:
-          name: wczz-deb
+          name: dyzy-deb
           path: packages/*.deb
