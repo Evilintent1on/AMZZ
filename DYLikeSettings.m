@@ -208,10 +208,11 @@ void DYLikeInstallSettingsHook(void) {
 
         id section = [sectionClass new];
         valid &= DYLikeSet(section, @"itemArray", @[item]);
+        DYLikeSet(section, @"sectionHeaderTitle", @"AMZZ");
         DYLikeSet(section, @"sectionHeaderHeight", @16);
         if (!valid) return value;
         NSMutableArray *sections = [value mutableCopy];
-        [sections insertObject:section atIndex:0];
+        [sections insertObject:section atIndex:1];
         return sections;
     });
     class_replaceMethod(cls, selector, replacement, method_getTypeEncoding(method));
