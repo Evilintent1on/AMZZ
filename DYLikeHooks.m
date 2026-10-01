@@ -258,6 +258,35 @@ static dispatch_block_t DYUnfollowOperation(const DYHook *hook, id owner, NSArra
             }
         };
     }
+    // 底部菜单"取消关注"走关系服务：尝试关掉二次确认后走原流程
+    if (strcmp(hook->className, "AWEConcernRelationServiceImpl") == 0 &&
+        strcmp(hook->selectorName, "unfollow:completion:") == 0) {
+        SEL selector = NSSelectorFromString(@"unfollow:completion:");
+        if (!DYMatches(class_getInstanceMethod([owner class], selector), DYShapeOBO)) return nil;
+        id user = DYArg(arguments, 0);
+        id completion = DYArg(arguments, 1);
+        SEL doubleCheck = NSSelectorFromString(@"setEnableDoubleCheckAlert:");
+        id target = nil;
+        if (DYMatches(class_getInstanceMethod([owner class], doubleCheck), DYShapeB)) {
+            target = owner;
+        } else if (user && DYMatches(class_getInstanceMethod([user class], doubleCheck), DYShapeB)) {
+            target = user;
+        }
+        if (!target) return nil;
+        return ^{
+            if (![target respondsToSelector:doubleCheck]) {
+                [DYLikePrompt showStaleNotice];
+                return;
+            }
+            BOOL originalDoubleCheck = [DYLikeRead(target, @"enableDoubleCheckAlert") boolValue];
+            ((void (*)(id, SEL, BOOL))objc_msgSend)(target, doubleCheck, NO);
+            @try {
+                ((void (*)(id, SEL, id, id))objc_msgSend)(owner, selector, user, completion);
+            } @finally {
+                ((void (*)(id, SEL, BOOL))objc_msgSend)(target, doubleCheck, originalDoubleCheck);
+            }
+        };
+    }
     return nil;
 }
 
