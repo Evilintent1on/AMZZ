@@ -258,13 +258,21 @@ static dispatch_block_t DYUnfollowOperation(const DYHook *hook, id owner, NSArra
             }
         };
     }
-    // 底部菜单"取消关注"走关系服务：尝试关掉二次确认后走原流程
+    // 底部菜单"取消关注"走关系服务：优先调不弹框的私有直接方法，找不到再尝试关二次确认开关
     if (strcmp(hook->className, "AWEConcernRelationServiceImpl") == 0 &&
         strcmp(hook->selectorName, "unfollow:completion:") == 0) {
         SEL selector = NSSelectorFromString(@"unfollow:completion:");
         if (!DYMatches(class_getInstanceMethod([owner class], selector), DYShapeOBO)) return nil;
         id user = DYArg(arguments, 0);
         id completion = DYArg(arguments, 1);
+        // 1. 先找私有直接方法（p_ 前缀，不弹框）
+        SEL directSel = NSSelectorFromString(@"p_unfollow:completion:");
+        if (DYMatches(class_getInstanceMethod([owner class], directSel), DYShapeOBO)) {
+            return ^{
+                ((void (*)(id, SEL, id, id))objc_msgSend)(owner, directSel, user, completion);
+            };
+        }
+        // 2. 尝试关掉二次确认开关后走原流程
         SEL doubleCheck = NSSelectorFromString(@"setEnableDoubleCheckAlert:");
         id target = nil;
         if (DYMatches(class_getInstanceMethod([owner class], doubleCheck), DYShapeB)) {
