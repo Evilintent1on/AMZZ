@@ -27,7 +27,8 @@ DYLike_FILES = Sources/Hooks/DYLikeHooks.m \
 DYLike_CFLAGS = -fobjc-arc -Wall -Wextra -Wno-unused-parameter -Wno-deprecated-declarations \
 	-ISources/Core \
 	-ISources/UI \
-	-ISources/Settings
+	-ISources/Settings \
+	-DPACKAGE_VERSION=@\"$(shell grep '^Version:' control | cut -d' ' -f2)\"
 DYLike_FRAMEWORKS = UIKit Foundation QuartzCore
 DYLike_LDFLAGS = -lobjc
 
