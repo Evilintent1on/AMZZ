@@ -212,7 +212,7 @@ void DYLikeInstallSettingsHook(void) {
         DYLikeSet(section, @"sectionHeaderHeight", @16);
         if (!valid) return value;
         NSMutableArray *sections = [value mutableCopy];
-        [sections insertObject:section atIndex:1];
+        [sections insertObject:section atIndex:0];
         return sections;
     });
     class_replaceMethod(cls, selector, replacement, method_getTypeEncoding(method));
