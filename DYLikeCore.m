@@ -3,7 +3,7 @@
 #import <objc/runtime.h>
 #import <objc/message.h>
 
-NSString *const DYLikeVersion = @"2.0.0";
+NSString *const DYLikeVersion = @"0.1-3";
 NSString *const DYLikeRepositoryURL = @"https://github.com/jijiang2333/DYSecondaryConfirmation";
 NSString *const DYLikeAuthor = @"JiJiang778";
 NSString *const DYLikeLikeEnabledKey = @"DYLikeConfirmLike";
