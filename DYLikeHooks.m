@@ -205,6 +205,59 @@ static dispatch_block_t DYUnfollowOperation(const DYHook *hook, id owner, NSArra
             ((void (*)(id, SEL))objc_msgSend)(store, selector);
         };
     }
+    // 个人主页直接取关入口：关掉抖音二次确认后走原流程（重入时走重放保护直接调原实现）
+    if (strcmp(hook->className, "AWEProfileHeaderFollowAreaCell") == 0 &&
+        strcmp(hook->selectorName, "unfollow:") == 0) {
+        SEL selector = NSSelectorFromString(@"unfollow:");
+        BOOL flag = [DYArg(arguments, 0) boolValue];
+        id context = DYLikeRead(DYLikeRead(DYLikeRead(DYLikeRead(owner, @"relationView"), @"relationBtnStateMachine"), @"currentState"), @"context");
+        SEL doubleCheck = NSSelectorFromString(@"setEnableDoubleCheckAlert:");
+        if (!context || !DYMatches(class_getInstanceMethod([context class], doubleCheck), DYShapeB)) return nil;
+        return ^{
+            id curContext = DYLikeRead(DYLikeRead(DYLikeRead(DYLikeRead(owner, @"relationView"), @"relationBtnStateMachine"), @"currentState"), @"context");
+            if (!curContext || ![curContext respondsToSelector:doubleCheck]) {
+                [DYLikePrompt showStaleNotice];
+                return;
+            }
+            BOOL originalDoubleCheck = [DYLikeRead(curContext, @"enableDoubleCheckAlert") boolValue];
+            ((void (*)(id, SEL, BOOL))objc_msgSend)(curContext, doubleCheck, NO);
+            @try {
+                ((void (*)(id, SEL, BOOL))objc_msgSend)(owner, selector, flag);
+            } @finally {
+                ((void (*)(id, SEL, BOOL))objc_msgSend)(curContext, doubleCheck, originalDoubleCheck);
+            }
+        };
+    }
+    // 个人主页取关事件直达入口：尝试关掉二次确认后走原流程
+    if (strcmp(hook->className, "AWEProfileFollowAreaFollowComponent") == 0 &&
+        strcmp(hook->selectorName, "handleUnfollowEventWithHeaderContext:fromRemoveMate:completion:") == 0) {
+        SEL selector = NSSelectorFromString(@"handleUnfollowEventWithHeaderContext:fromRemoveMate:completion:");
+        if (!DYMatches(class_getInstanceMethod([owner class], selector), DYShapeOBO)) return nil;
+        id headerContext = DYArg(arguments, 0);
+        BOOL fromRemoveMate = [DYArg(arguments, 1) boolValue];
+        id completion = DYArg(arguments, 2);
+        SEL doubleCheck = NSSelectorFromString(@"setEnableDoubleCheckAlert:");
+        id target = nil;
+        if (headerContext && DYMatches(class_getInstanceMethod([headerContext class], doubleCheck), DYShapeB)) {
+            target = headerContext;
+        } else if (DYMatches(class_getInstanceMethod([owner class], doubleCheck), DYShapeB)) {
+            target = owner;
+        }
+        if (!target) return nil;
+        return ^{
+            if (![target respondsToSelector:doubleCheck]) {
+                [DYLikePrompt showStaleNotice];
+                return;
+            }
+            BOOL originalDoubleCheck = [DYLikeRead(target, @"enableDoubleCheckAlert") boolValue];
+            ((void (*)(id, SEL, BOOL))objc_msgSend)(target, doubleCheck, NO);
+            @try {
+                ((void (*)(id, SEL, id, BOOL, id))objc_msgSend)(owner, selector, headerContext, fromRemoveMate, completion);
+            } @finally {
+                ((void (*)(id, SEL, BOOL))objc_msgSend)(target, doubleCheck, originalDoubleCheck);
+            }
+        };
+    }
     return nil;
 }
 
