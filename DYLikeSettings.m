@@ -212,11 +212,11 @@ void DYLikeInstallSettingsHook(void) {
         DYLikeSet(section, @"sectionHeaderHeight", @40);
         if (!valid) return value;
         NSMutableArray *sections = [value mutableCopy];
-        // 有 DYYY 就插在它后面（第二位），没有就置顶
+        // 插在原生"账号"分区前面：有插件时跟在所有插件后面，无插件时置顶
         NSUInteger insertIndex = 0;
         for (NSUInteger i = 0; i < sections.count; i++) {
-            if ([DYLikeRead(sections[i], @"sectionHeaderTitle") isEqual:@"DYYY"]) {
-                insertIndex = i + 1;
+            if ([DYLikeRead(sections[i], @"sectionHeaderTitle") isEqual:@"账号"]) {
+                insertIndex = i;
                 break;
             }
         }
