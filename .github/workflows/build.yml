@@ -52,5 +52,5 @@ jobs:
       - name: Upload DEB
         uses: actions/upload-artifact@v4
         with:
-          name: dyzy-deb
+          name: amzz-deb
           path: packages/*.deb
