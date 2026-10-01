@@ -368,6 +368,11 @@ void DYLikeGuard(DYLikeActionType action, DYLikeIntent intent, id owner, id subj
     if (intent == DYLikeIntentToggle && state) {
         effectiveIntent = state.boolValue ? DYLikeIntentRemove : DYLikeIntentAdd;
     }
+    // 取消关注二次确认功能已删除：取关直接执行，不弹框
+    if (action == DYLikeActionFollow && effectiveIntent == DYLikeIntentRemove) {
+        operation();
+        return;
+    }
     NSString *name = action == DYLikeActionFollow ?
         DYLikeString(DYLikeRead(model, @"nickname") ?: DYLikeRead(model, @"nickName")) : nil;
     BOOL isComment = commentAction || DYLikeRead(model, @"commentID") != nil;
