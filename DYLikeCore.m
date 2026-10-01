@@ -3,7 +3,12 @@
 #import <objc/runtime.h>
 #import <objc/message.h>
 
+// 版本号从 control 文件同步（Makefile 传 PACKAGE_VERSION），只改 control 一处即可
+#ifdef PACKAGE_VERSION
+NSString *const DYLikeVersion = PACKAGE_VERSION;
+#else
 NSString *const DYLikeVersion = @"0.1-3";
+#endif
 NSString *const DYLikeRepositoryURL = @"https://github.com/jijiang2333/DYSecondaryConfirmation";
 NSString *const DYLikeAuthor = @"JiJiang778";
 NSString *const DYLikeLikeEnabledKey = @"DYLikeConfirmLike";
