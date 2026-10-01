@@ -100,7 +100,13 @@ static __weak DYLikePrompt *DYLikeVisiblePrompt;
     self.heading.accessibilityTraits |= UIAccessibilityTraitHeader;
     [content addArrangedSubview:self.heading];
 
-    // 关注/取消关注都不显示作者名
+    // 关注确认不显示作者名
+    if (name.length && action != DYLikeActionFollow) {
+        UILabel *nameLabel = [self labelWithText:name size:13 weight:UIFontWeightMedium];
+        nameLabel.numberOfLines = 2;
+        nameLabel.lineBreakMode = NSLineBreakByTruncatingTail;
+        [content addArrangedSubview:nameLabel];
+    }
 
     // 横向主分割线（浅灰色）
     UIView *horizontalDivider = [UIView new];
