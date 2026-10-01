@@ -212,7 +212,16 @@ void DYLikeInstallSettingsHook(void) {
         DYLikeSet(section, @"sectionHeaderHeight", @40);
         if (!valid) return value;
         NSMutableArray *sections = [value mutableCopy];
-        [sections insertObject:section atIndex:1];
+        // 有 DYYY 就插在它后面（第二位），没有就置顶
+        NSUInteger insertIndex = 0;
+        for (NSUInteger i = 0; i < sections.count; i++) {
+            if ([DYLikeRead(sections[i], @"sectionHeaderTitle") isEqual:@"DYYY"]) {
+                insertIndex = i + 1;
+                break;
+            }
+        }
+        if (insertIndex > sections.count) insertIndex = sections.count;
+        [sections insertObject:section atIndex:insertIndex];
         return sections;
     });
     class_replaceMethod(cls, selector, replacement, method_getTypeEncoding(method));
