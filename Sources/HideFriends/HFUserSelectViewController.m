@@ -12,9 +12,6 @@
 #import "HFConstants.h"
 #import "../Core/DYLikeCore.h"
 
-// 前向声明：DYYY 风格圆角卡片背景（定义在 DYLikeCore.m）
-UIView *DYLikeRoundedCardBg(NSInteger rows, NSInteger row, UIColor *color);
-
 static NSString *const kUserCellId = @"HFUserSelectCell";
 
 // v1.3.47 统一深灰主题（与设置页一致）
