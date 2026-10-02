@@ -178,9 +178,27 @@ static NSString *const kCellId = @"HFBlacklistCell";
     return cell;
 }
 
+// DYYY 风格 12pt 圆角卡片背景（本地 static 定义，避免头文件导入问题）
+static UIView *HF_RoundedCardBg(NSInteger rows, NSInteger row, UIColor *color) {
+    UIView *bg = [[UIView alloc] init];
+    bg.backgroundColor = color;
+    bg.layer.cornerRadius = 12;
+    bg.layer.masksToBounds = YES;
+    if (rows == 1) {
+        bg.layer.maskedCorners = kCALayerMinXMinYCorner | kCALayerMaxXMinYCorner | kCALayerMinXMaxYCorner | kCALayerMaxXMaxYCorner;
+    } else if (row == 0) {
+        bg.layer.maskedCorners = kCALayerMinXMinYCorner | kCALayerMaxXMinYCorner;
+    } else if (row == rows - 1) {
+        bg.layer.maskedCorners = kCALayerMinXMaxYCorner | kCALayerMaxXMaxYCorner;
+    } else {
+        bg.layer.cornerRadius = 0;
+    }
+    return bg;
+}
+
 - (void)tableView:(UITableView *)tableView willDisplayCell:(UITableViewCell *)cell forRowAtIndexPath:(NSIndexPath *)indexPath {
     NSInteger rows = [self tableView:tableView numberOfRowsInSection:indexPath.section];
-    cell.backgroundView = DYLikeRoundedCardBg(rows, indexPath.row, HF_CELL_COLOR);
+    cell.backgroundView = HF_RoundedCardBg(rows, indexPath.row, HF_CELL_COLOR);
     cell.backgroundColor = UIColor.clearColor;
 }
 
