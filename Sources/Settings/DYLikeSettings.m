@@ -4,6 +4,28 @@
 #import "../HideFriends/HFBlacklistViewController.h"
 #import <objc/runtime.h>
 
+// 主题自适应：跟随抖音浅色/深色
+static BOOL DYLikeIsLightTheme(void) {
+    return DYLikeUserInterfaceStyle() == UIUserInterfaceStyleLight;
+}
+static UIColor *DYLikeBgColor(void) {
+    return DYLikeIsLightTheme() ? UIColor.systemGroupedBackgroundColor :
+        [UIColor colorWithRed:0.05 green:0.05 blue:0.06 alpha:1.0];
+}
+static UIColor *DYLikeCellColor(void) {
+    return DYLikeIsLightTheme() ? UIColor.secondarySystemGroupedBackgroundColor :
+        [UIColor colorWithRed:0.11 green:0.11 blue:0.12 alpha:1.0];
+}
+static UIColor *DYLikeTextColor(void) {
+    return DYLikeIsLightTheme() ? UIColor.labelColor : UIColor.whiteColor;
+}
+static UIColor *DYLikeSubTextColor(void) {
+    return DYLikeIsLightTheme() ? UIColor.secondaryLabelColor : [UIColor colorWithWhite:0.6 alpha:1.0];
+}
+static UIColor *DYLikeSeparatorColor(void) {
+    return DYLikeIsLightTheme() ? UIColor.separatorColor : [UIColor colorWithWhite:1.0 alpha:0.08];
+}
+
 @implementation DYLikeSettingsViewController
 
 - (instancetype)init {
@@ -14,31 +36,42 @@
     [super viewDidLoad];
     self.title = @"AMZZ";
     self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
-    // DYYY 风格：深色背景
-    self.view.backgroundColor = [UIColor colorWithRed:0.05 green:0.05 blue:0.06 alpha:1.0];
-    self.tableView.backgroundColor = [UIColor colorWithRed:0.05 green:0.05 blue:0.06 alpha:1.0];
-    self.tableView.separatorColor = [UIColor colorWithWhite:1.0 alpha:0.08];
     self.tableView.rowHeight = 56;
     self.tableView.sectionHeaderHeight = 36;
     self.tableView.showsVerticalScrollIndicator = NO;
-    // 导航栏深色
-    UINavigationBarAppearance *appearance = [[UINavigationBarAppearance alloc] init];
-    [appearance configureWithOpaqueBackground];
-    appearance.backgroundColor = [UIColor colorWithRed:0.05 green:0.05 blue:0.06 alpha:1.0];
-    appearance.titleTextAttributes = @{NSForegroundColorAttributeName: UIColor.whiteColor};
-    self.navigationItem.standardAppearance = appearance;
-    self.navigationItem.scrollEdgeAppearance = appearance;
-    self.navigationItem.compactAppearance = appearance;
-    self.navigationController.navigationBar.tintColor = UIColor.whiteColor;
+    [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(applyTheme)
+        name:DYLikeThemeDidChangeNotification object:nil];
+    [self applyTheme];
 }
 
 - (void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
+    [self applyTheme];
     [self.tableView reloadData];
 }
 
+- (void)applyTheme {
+    BOOL light = DYLikeIsLightTheme();
+    self.view.backgroundColor = DYLikeBgColor();
+    self.tableView.backgroundColor = DYLikeBgColor();
+    self.tableView.separatorColor = DYLikeSeparatorColor();
+    UINavigationBarAppearance *appearance = [[UINavigationBarAppearance alloc] init];
+    [appearance configureWithOpaqueBackground];
+    appearance.backgroundColor = DYLikeBgColor();
+    appearance.titleTextAttributes = @{NSForegroundColorAttributeName: DYLikeTextColor()};
+    self.navigationItem.standardAppearance = appearance;
+    self.navigationItem.scrollEdgeAppearance = appearance;
+    self.navigationItem.compactAppearance = appearance;
+    self.navigationController.navigationBar.tintColor = DYLikeTextColor();
+    [self setNeedsStatusBarAppearanceUpdate];
+}
+
 - (UIStatusBarStyle)preferredStatusBarStyle {
-    return UIStatusBarStyleLightContent;
+    return DYLikeIsLightTheme() ? UIStatusBarStyleDarkContent : UIStatusBarStyleLightContent;
+}
+
+- (void)dealloc {
+    [NSNotificationCenter.defaultCenter removeObserver:self];
 }
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
@@ -56,7 +89,7 @@
 - (void)tableView:(UITableView *)tableView willDisplayHeaderView:(UIView *)view forSection:(NSInteger)section {
     if ([view isKindOfClass:UITableViewHeaderFooterView.class]) {
         UITableViewHeaderFooterView *header = (UITableViewHeaderFooterView *)view;
-        header.textLabel.textColor = [UIColor colorWithWhite:0.6 alpha:1.0];
+        header.textLabel.textColor = DYLikeSubTextColor();
         header.textLabel.font = [UIFont systemFontOfSize:13];
     }
 }
@@ -68,14 +101,13 @@
         cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:cellId];
     }
     cell.textLabel.font = [UIFont systemFontOfSize:16];
-    cell.textLabel.textColor = UIColor.whiteColor;
-    cell.backgroundColor = [UIColor colorWithRed:0.11 green:0.11 blue:0.12 alpha:1.0];
+    cell.textLabel.textColor = DYLikeTextColor();
+    cell.backgroundColor = DYLikeCellColor();
     cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
-    // DYYY 风格图标
     NSString *iconName = indexPath.row == 0 ? @"checkmark.circle" : @"person.2.circle";
     UIImage *icon = [UIImage systemImageNamed:iconName];
     cell.imageView.image = icon;
-    cell.imageView.tintColor = UIColor.whiteColor;
+    cell.imageView.tintColor = DYLikeTextColor();
     cell.textLabel.text = indexPath.row == 0 ? @"二次确认" : @"抖音密友";
     return cell;
 }
@@ -108,9 +140,19 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.title = @"二次确认";
-    self.view.backgroundColor = [UIColor colorWithRed:0.05 green:0.05 blue:0.06 alpha:1.0];
-    self.tableView.backgroundColor = [UIColor colorWithRed:0.05 green:0.05 blue:0.06 alpha:1.0];
-    self.tableView.separatorColor = [UIColor colorWithWhite:1.0 alpha:0.08];
+    [self applyTheme];
+}
+
+- (void)viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:animated];
+    [self applyTheme];
+    [self.tableView reloadData];
+}
+
+- (void)applyTheme {
+    self.view.backgroundColor = DYLikeBgColor();
+    self.tableView.backgroundColor = DYLikeBgColor();
+    self.tableView.separatorColor = DYLikeSeparatorColor();
 }
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView { return 2; }
@@ -128,14 +170,14 @@
 - (void)tableView:(UITableView *)tableView willDisplayHeaderView:(UIView *)view forSection:(NSInteger)section {
     if ([view isKindOfClass:UITableViewHeaderFooterView.class]) {
         UITableViewHeaderFooterView *header = (UITableViewHeaderFooterView *)view;
-        header.textLabel.textColor = [UIColor colorWithWhite:0.6 alpha:1.0];
+        header.textLabel.textColor = DYLikeSubTextColor();
         header.textLabel.font = [UIFont systemFontOfSize:13];
     }
 }
 - (void)tableView:(UITableView *)tableView willDisplayFooterView:(UIView *)view forSection:(NSInteger)section {
     if ([view isKindOfClass:UITableViewHeaderFooterView.class]) {
         UITableViewHeaderFooterView *footer = (UITableViewHeaderFooterView *)view;
-        footer.textLabel.textColor = [UIColor colorWithWhite:0.6 alpha:1.0];
+        footer.textLabel.textColor = DYLikeSubTextColor();
         footer.textLabel.font = [UIFont systemFontOfSize:13];
     }
 }
@@ -154,8 +196,8 @@
     UITableViewCell *cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:nil];
     cell.textLabel.text = titles[index];
     cell.textLabel.font = [UIFont systemFontOfSize:16];
-    cell.textLabel.textColor = UIColor.whiteColor;
-    cell.backgroundColor = [UIColor colorWithRed:0.11 green:0.11 blue:0.12 alpha:1.0];
+    cell.textLabel.textColor = DYLikeTextColor();
+    cell.backgroundColor = DYLikeCellColor();
     cell.selectionStyle = UITableViewCellSelectionStyleNone;
     UISwitch *toggle = [UISwitch new];
     toggle.on = DYLikeEnabled((DYLikeActionType)index);
@@ -185,9 +227,19 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.title = @"抖音密友";
-    self.view.backgroundColor = [UIColor colorWithRed:0.05 green:0.05 blue:0.06 alpha:1.0];
-    self.tableView.backgroundColor = [UIColor colorWithRed:0.05 green:0.05 blue:0.06 alpha:1.0];
-    self.tableView.separatorColor = [UIColor colorWithWhite:1.0 alpha:0.08];
+    [self applyTheme];
+}
+
+- (void)viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:animated];
+    [self applyTheme];
+    [self.tableView reloadData];
+}
+
+- (void)applyTheme {
+    self.view.backgroundColor = DYLikeBgColor();
+    self.tableView.backgroundColor = DYLikeBgColor();
+    self.tableView.separatorColor = DYLikeSeparatorColor();
 }
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView { return 2; }
@@ -199,7 +251,7 @@
 - (void)tableView:(UITableView *)tableView willDisplayHeaderView:(UIView *)view forSection:(NSInteger)section {
     if ([view isKindOfClass:UITableViewHeaderFooterView.class]) {
         UITableViewHeaderFooterView *header = (UITableViewHeaderFooterView *)view;
-        header.textLabel.textColor = [UIColor colorWithWhite:0.6 alpha:1.0];
+        header.textLabel.textColor = DYLikeSubTextColor();
         header.textLabel.font = [UIFont systemFontOfSize:13];
     }
 }
@@ -207,10 +259,10 @@
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
     UITableViewCell *cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:nil];
     cell.textLabel.font = [UIFont systemFontOfSize:16];
-    cell.textLabel.textColor = UIColor.whiteColor;
+    cell.textLabel.textColor = DYLikeTextColor();
     cell.detailTextLabel.font = [UIFont systemFontOfSize:13];
-    cell.detailTextLabel.textColor = [UIColor colorWithWhite:0.6 alpha:1.0];
-    cell.backgroundColor = [UIColor colorWithRed:0.11 green:0.11 blue:0.12 alpha:1.0];
+    cell.detailTextLabel.textColor = DYLikeSubTextColor();
+    cell.backgroundColor = DYLikeCellColor();
     if (indexPath.section == 0) {
         cell.textLabel.text = @"隐藏好友";
         cell.detailTextLabel.text = @"开启后隐藏黑名单好友相关内容";
