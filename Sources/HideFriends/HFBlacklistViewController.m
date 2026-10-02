@@ -178,6 +178,12 @@ static NSString *const kCellId = @"HFBlacklistCell";
     return cell;
 }
 
+- (void)tableView:(UITableView *)tableView willDisplayCell:(UITableViewCell *)cell forRowAtIndexPath:(NSIndexPath *)indexPath {
+    NSInteger rows = [self tableView:tableView numberOfRowsInSection:indexPath.section];
+    cell.backgroundView = DYLikeRoundedCardBg(rows, indexPath.row, HF_CELL_COLOR);
+    cell.backgroundColor = UIColor.clearColor;
+}
+
 #pragma mark - 左滑删除
 
 - (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath {
