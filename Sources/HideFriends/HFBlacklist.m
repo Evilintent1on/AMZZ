@@ -1957,10 +1957,10 @@ static void hf_installCollectionLayoutHook(void) {
 
 /// 收集视图层级中的可滚动列表（v1.1.9：深入嵌套容器，最多 max 个）
 + (void)collectListsInView:(UIView *)view into:(NSMutableArray<UIScrollView *> *)outArray max:(NSInteger)max {
-    if (!view || outArray.count >= max) return;
+    if (!view || (NSInteger)outArray.count >= max) return;
     if ([view isKindOfClass:[UITableView class]] || [view isKindOfClass:[UICollectionView class]]) {
         // 去重加入（Tab 容器内嵌的关注/粉丝/作品子列表也要收集，不再 return 截断）
-        if (![outArray containsObject:view]) {
+        if (![outArray containsObject:(UIScrollView *)view]) {
             [outArray addObject:(UIScrollView *)view];
         }
     }
