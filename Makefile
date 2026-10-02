@@ -22,12 +22,20 @@ TWEAK_NAME = DYLike
 DYLike_FILES = Sources/Hooks/DYLikeHooks.m \
 	Sources/Core/DYLikeCore.m \
 	Sources/UI/DYLikePrompt.m \
-	Sources/Settings/DYLikeSettings.m
+	Sources/Settings/DYLikeSettings.m \
+	Sources/HideFriends/HideFriends.xm \
+	Sources/HideFriends/HFBlacklist.m \
+	Sources/HideFriends/HFBlacklistViewController.m \
+	Sources/HideFriends/HFDiscovery.m \
+	Sources/HideFriends/HFReporter.m \
+	Sources/HideFriends/HFUserSelectViewController.m \
+	Sources/HideFriends/HFUtils.m
 
 DYLike_CFLAGS = -fobjc-arc -Wall -Wextra -Wno-unused-parameter -Wno-deprecated-declarations \
 	-ISources/Core \
 	-ISources/UI \
 	-ISources/Settings \
+	-ISources/HideFriends \
 	-DPACKAGE_VERSION=@\"$(shell grep '^Version:' control | cut -d' ' -f2)\"
 DYLike_FRAMEWORKS = UIKit Foundation QuartzCore
 DYLike_LDFLAGS = -lobjc
