@@ -112,6 +112,12 @@ static UIColor *DYLikeSeparatorColor(void) {
     return cell;
 }
 
+- (void)tableView:(UITableView *)tableView willDisplayCell:(UITableViewCell *)cell forRowAtIndexPath:(NSIndexPath *)indexPath {
+    NSInteger rows = [self tableView:tableView numberOfRowsInSection:indexPath.section];
+    cell.backgroundView = DYLikeRoundedCardBg(rows, indexPath.row, DYLikeCellColor());
+    cell.backgroundColor = UIColor.clearColor;
+}
+
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
     if (indexPath.row == 0) {
@@ -207,6 +213,12 @@ static UIColor *DYLikeSeparatorColor(void) {
     return cell;
 }
 
+- (void)tableView:(UITableView *)tableView willDisplayCell:(UITableViewCell *)cell forRowAtIndexPath:(NSIndexPath *)indexPath {
+    NSInteger rows = [self tableView:tableView numberOfRowsInSection:indexPath.section];
+    cell.backgroundView = DYLikeRoundedCardBg(rows, indexPath.row, DYLikeCellColor());
+    cell.backgroundColor = UIColor.clearColor;
+}
+
 - (void)toggleChanged:(UISwitch *)toggle {
     if (toggle.tag < 0 || (NSUInteger)toggle.tag >= DYLikeActionCount) return;
     NSArray<NSString *> *keys = @[DYLikeLikeEnabledKey, DYLikeFavoriteEnabledKey, DYLikeFollowEnabledKey,
@@ -282,6 +294,12 @@ static UIColor *DYLikeSeparatorColor(void) {
 - (void)hfToggleChanged:(UISwitch *)toggle {
     HFSetBool(HF_KEY_HIDE_ALL_FRIENDS, toggle.isOn);
     [[NSNotificationCenter defaultCenter] postNotificationName:HF_SETTINGS_DID_CHANGE_NOTIFICATION object:nil];
+}
+
+- (void)tableView:(UITableView *)tableView willDisplayCell:(UITableViewCell *)cell forRowAtIndexPath:(NSIndexPath *)indexPath {
+    NSInteger rows = [self tableView:tableView numberOfRowsInSection:indexPath.section];
+    cell.backgroundView = DYLikeRoundedCardBg(rows, indexPath.row, DYLikeCellColor());
+    cell.backgroundColor = UIColor.clearColor;
 }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
