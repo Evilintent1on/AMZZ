@@ -12,10 +12,13 @@
     [super viewDidLoad];
     self.title = @"AMZZ";
     self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
-    // 返回按钮（DYYY 风格）
-    UIBarButtonItem *backItem = [[UIBarButtonItem alloc] initWithImage:[UIImage systemImageNamed:@"chevron.left"]
-        style:UIBarButtonItemStylePlain target:self action:@selector(closeSettings)];
-    backItem.tintColor = DYLikeTextColor();
+    // 返回按钮（DYYY 风格：单纯箭头，无圆形背景）
+    UIButton *backBtn = [UIButton buttonWithType:UIButtonTypeSystem];
+    [backBtn setImage:[UIImage systemImageNamed:@"chevron.left"] forState:UIControlStateNormal];
+    backBtn.tintColor = DYLikeTextColor();
+    backBtn.frame = CGRectMake(0, 0, 30, 30);
+    [backBtn addTarget:self action:@selector(closeSettings) forControlEvents:UIControlEventTouchUpInside];
+    UIBarButtonItem *backItem = [[UIBarButtonItem alloc] initWithCustomView:backBtn];
     self.navigationItem.leftBarButtonItem = backItem;
     self.tableView.backgroundColor = DYLikeBgColor();
     self.tableView.separatorColor = DYLikeSeparatorColor();
@@ -113,8 +116,7 @@
     UITableViewCell *cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault
                                                     reuseIdentifier:nil];
     cell.textLabel.text = titles[index];
-    cell.textLabel.font = [UIFont preferredFontForTextStyle:UIFontTextStyleSubheadline];
-    cell.textLabel.adjustsFontForContentSizeCategory = YES;
+    cell.textLabel.font = [UIFont systemFontOfSize:17];
     cell.textLabel.textColor = DYLikeTextColor();
     cell.backgroundColor = UIColor.clearColor;
     cell.selectionStyle = UITableViewCellSelectionStyleNone;
