@@ -33,6 +33,8 @@ FOUNDATION_EXPORT UIWindow *DYLikeActiveWindow(void);
 FOUNDATION_EXPORT UIColor *DYLikeAccent(DYLikeActionType action);
 FOUNDATION_EXPORT UIUserInterfaceStyle DYLikeUserInterfaceStyle(void);
 FOUNDATION_EXPORT void DYLikeInstallThemeHooks(void);
+// DYYY 风格 12pt 圆角卡片背景
+FOUNDATION_EXPORT UIView *DYLikeRoundedCardBg(NSInteger rows, NSInteger row, UIColor *color);
 
 // 根据开关和操作状态显示确认弹窗，确认后执行对应操作。
 FOUNDATION_EXPORT void DYLikeGuard(DYLikeActionType action, DYLikeIntent intent,
