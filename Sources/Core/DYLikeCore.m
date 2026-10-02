@@ -403,3 +403,20 @@ void DYLikeGuard(DYLikeActionType action, DYLikeIntent intent, id owner, id subj
         DYLikeRunApproved(action, effectiveIntent, operation, confirmedUnfollow);
     }];
 }
+
+UIView *DYLikeRoundedCardBg(NSInteger rows, NSInteger row, UIColor *color) {
+    UIView *bg = [[UIView alloc] init];
+    bg.backgroundColor = color;
+    bg.layer.cornerRadius = 12;
+    bg.layer.masksToBounds = YES;
+    if (rows == 1) {
+        bg.layer.maskedCorners = kCALayerMinXMinYCorner | kCALayerMaxXMinYCorner | kCALayerMinXMaxYCorner | kCALayerMaxXMaxYCorner;
+    } else if (row == 0) {
+        bg.layer.maskedCorners = kCALayerMinXMinYCorner | kCALayerMaxXMinYCorner;
+    } else if (row == rows - 1) {
+        bg.layer.maskedCorners = kCALayerMinXMaxYCorner | kCALayerMaxXMaxYCorner;
+    } else {
+        bg.layer.cornerRadius = 0;
+    }
+    return bg;
+}
