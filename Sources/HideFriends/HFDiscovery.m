@@ -316,7 +316,7 @@ static BOOL hf_clsIsUIViewSubclass(Class c) {
         // 只保留 UIView 子类（纯 C 判断，不触发消息转发）
         if (!hf_clsIsUIViewSubclass(c)) continue;
         [found addObject:n];
-        if (found.count >= 80) break;
+        if (found.count >= (NSUInteger)80) break;
     }
     free(classes);
     return [found copy];
