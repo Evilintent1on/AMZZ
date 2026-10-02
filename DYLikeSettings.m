@@ -53,7 +53,9 @@
     self.tableView.backgroundColor = [UIColor clearColor];
     self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
     self.tableView.contentInset = UIEdgeInsetsMake(20, 0, 0, 0);
-    self.tableView.sectionHeaderTopPadding = 0;
+    if (@available(iOS 15.0, *)) {
+        self.tableView.sectionHeaderTopPadding = 0;
+    }
 }
 
 - (instancetype)init {
@@ -84,8 +86,8 @@
         cell.backgroundColor = [UIColor clearColor];
     }
 
-    NSArray *titles = @[@"点赞二次确认", @"关注二次确认", @"收藏二次确认", @"评论二次确认", @"分享二次确认"];
-    NSArray *keys = @[@"DYLikeConfirmLike", @"DYLikeConfirmFollow", @"DYLikeConfirmCollect", @"DYLikeConfirmComment", @"DYLikeConfirmShare"];
+    NSArray *titles = @[@"点赞二次确认", @"关注二次确认", @"收藏二次确认", @"评论点赞二次确认", @"评论点踩二次确认"];
+    NSArray *keys = @[DYLikeLikeEnabledKey, DYLikeFollowEnabledKey, DYLikeFavoriteEnabledKey, DYLikeCommentLikeEnabledKey, DYLikeCommentDislikeEnabledKey];
 
     NSUInteger idx = (NSUInteger)indexPath.row;
     cell.textLabel.text = titles[idx];
@@ -93,7 +95,9 @@
     cell.selectionStyle = UITableViewCellSelectionStyleNone;
 
     UISwitch *sw = [[UISwitch alloc] init];
-    sw.on = DYLikeBool(keys[idx], YES);
+    sw.on = [NSUserDefaults.standardUserDefaults boolForKey:keys[idx]];
+    // 默认 YES（首次未设置时）
+    if (![NSUserDefaults.standardUserDefaults objectForKey:keys[idx]]) sw.on = YES;
     sw.tag = idx;
     [sw addTarget:self action:@selector(switchChanged:) forControlEvents:UIControlEventValueChanged];
     cell.accessoryView = sw;
@@ -102,8 +106,8 @@
 }
 
 - (void)switchChanged:(UISwitch *)sw {
-    NSArray *keys = @[@"DYLikeConfirmLike", @"DYLikeConfirmFollow", @"DYLikeConfirmCollect", @"DYLikeConfirmComment", @"DYLikeConfirmShare"];
-    DYLikeSetBool(keys[sw.tag], sw.isOn);
+    NSArray *keys = @[DYLikeLikeEnabledKey, DYLikeFollowEnabledKey, DYLikeFavoriteEnabledKey, DYLikeCommentLikeEnabledKey, DYLikeCommentDislikeEnabledKey];
+    [NSUserDefaults.standardUserDefaults setBool:sw.isOn forKey:keys[sw.tag]];
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
