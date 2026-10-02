@@ -93,11 +93,9 @@
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
     static NSArray<NSString *> *titles;
-    static NSArray<NSString *> *icons;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         titles = @[@"启用点赞二次确认", @"启用收藏二次确认", @"启用关注二次确认", @"启用评论点赞二次确认", @"启用评论点踩二次确认"];
-        icons = @[@"heart", @"star", @"person.badge.plus", @"bubble.left", @"bubble.right"];
     });
 
     NSUInteger index = (NSUInteger)indexPath.row;
@@ -109,11 +107,6 @@
     cell.textLabel.textColor = DYLikeTextColor();
     cell.backgroundColor = UIColor.clearColor;
     cell.selectionStyle = UITableViewCellSelectionStyleNone;
-
-    // DYYY 风格行首图标
-    UIImage *icon = [UIImage systemImageNamed:icons[index]];
-    cell.imageView.image = icon;
-    cell.imageView.tintColor = DYLikeTextColor();
 
     UISwitch *toggle = [UISwitch new];
     toggle.on = DYLikeEnabled((DYLikeActionType)index);
