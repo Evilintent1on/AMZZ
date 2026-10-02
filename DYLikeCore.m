@@ -111,7 +111,7 @@ static BOOL DYLikeIsLightTheme(void) {
 // DYYY 风格主题色：深色纯黑背景 + 深灰卡片，浅色跟系统
 UIColor *DYLikeBgColor(void) {
     if (DYLikeIsLightTheme()) return UIColor.systemGroupedBackgroundColor;
-    return UIColor.blackColor;
+    return [UIColor colorWithRed:0.06 green:0.06 blue:0.07 alpha:1]; // #0F0F12，比纯黑稍浅，对齐DYYY
 }
 
 UIColor *DYLikeCellColor(void) {

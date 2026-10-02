@@ -12,6 +12,11 @@
     [super viewDidLoad];
     self.title = @"AMZZ";
     self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
+    // 返回按钮（DYYY 风格）
+    UIBarButtonItem *backItem = [[UIBarButtonItem alloc] initWithImage:[UIImage systemImageNamed:@"chevron.left"]
+        style:UIBarButtonItemStylePlain target:self action:@selector(closeSettings)];
+    backItem.tintColor = DYLikeTextColor();
+    self.navigationItem.leftBarButtonItem = backItem;
     self.tableView.backgroundColor = DYLikeBgColor();
     self.tableView.separatorColor = DYLikeSeparatorColor();
     self.tableView.separatorInset = UIEdgeInsetsMake(0, 56, 0, 0);
@@ -137,7 +142,11 @@
 }
 
 - (void)closeSettings {
-    [self dismissViewControllerAnimated:YES completion:nil];
+    if (self.navigationController && self.navigationController.viewControllers.count > 1) {
+        [self.navigationController popViewControllerAnimated:YES];
+    } else {
+        [self dismissViewControllerAnimated:YES completion:nil];
+    }
 }
 
 @end
