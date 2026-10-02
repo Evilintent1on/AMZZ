@@ -12,8 +12,8 @@
     [super viewDidLoad];
     self.title = @"AMZZ";
     self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
-    self.tableView.backgroundColor = UIColor.systemGroupedBackgroundColor;
-    self.tableView.separatorColor = UIColor.separatorColor;
+    self.tableView.backgroundColor = DYLikeBgColor();
+    self.tableView.separatorColor = DYLikeSeparatorColor();
     self.tableView.rowHeight = UITableViewAutomaticDimension;
     self.tableView.estimatedRowHeight = 58;
     self.tableView.sectionHeaderHeight = UITableViewAutomaticDimension;
@@ -38,11 +38,13 @@
     UITraitCollection *theme = [UITraitCollection traitCollectionWithUserInterfaceStyle:self.overrideUserInterfaceStyle];
     UINavigationBarAppearance *appearance = [UINavigationBarAppearance new];
     [appearance configureWithOpaqueBackground];
-    appearance.backgroundColor = [UIColor.systemGroupedBackgroundColor resolvedColorWithTraitCollection:theme];
-    appearance.titleTextAttributes = @{NSForegroundColorAttributeName: [UIColor.labelColor resolvedColorWithTraitCollection:theme]};
+    appearance.backgroundColor = [DYLikeBgColor() resolvedColorWithTraitCollection:theme];
+    appearance.titleTextAttributes = @{NSForegroundColorAttributeName: [DYLikeTextColor() resolvedColorWithTraitCollection:theme]};
     self.navigationItem.standardAppearance = appearance;
     self.navigationItem.scrollEdgeAppearance = appearance;
     self.navigationItem.compactAppearance = appearance;
+    self.tableView.backgroundColor = DYLikeBgColor();
+    self.tableView.separatorColor = DYLikeSeparatorColor();
     [self setNeedsStatusBarAppearanceUpdate];
 }
 
@@ -68,7 +70,15 @@
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
-    return @"功能开关";
+    return @"二次确认";
+}
+
+- (void)tableView:(UITableView *)tableView willDisplayHeaderView:(UIView *)view forSection:(NSInteger)section {
+    if ([view isKindOfClass:UITableViewHeaderFooterView.class]) {
+        UITableViewHeaderFooterView *header = (UITableViewHeaderFooterView *)view;
+        header.textLabel.textColor = DYLikeSubTextColor();
+        header.textLabel.font = [UIFont systemFontOfSize:13];
+    }
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
@@ -88,8 +98,8 @@
     cell.textLabel.text = titles[index];
     cell.textLabel.font = [UIFont preferredFontForTextStyle:UIFontTextStyleSubheadline];
     cell.textLabel.adjustsFontForContentSizeCategory = YES;
-    cell.textLabel.textColor = UIColor.labelColor;
-    cell.backgroundColor = UIColor.secondarySystemGroupedBackgroundColor;
+    cell.textLabel.textColor = DYLikeTextColor();
+    cell.backgroundColor = UIColor.clearColor;
     cell.selectionStyle = UITableViewCellSelectionStyleNone;
 
     UISwitch *toggle = [UISwitch new];
@@ -99,6 +109,12 @@
     [toggle addTarget:self action:@selector(toggleChanged:) forControlEvents:UIControlEventValueChanged];
     cell.accessoryView = toggle;
     return cell;
+}
+
+- (void)tableView:(UITableView *)tableView willDisplayCell:(UITableViewCell *)cell forRowAtIndexPath:(NSIndexPath *)indexPath {
+    NSInteger rows = [self tableView:tableView numberOfRowsInSection:indexPath.section];
+    cell.backgroundView = DYLikeRoundedCardBg(rows, indexPath.row, DYLikeCellColor());
+    cell.backgroundColor = UIColor.clearColor;
 }
 
 - (void)toggleChanged:(UISwitch *)toggle {
