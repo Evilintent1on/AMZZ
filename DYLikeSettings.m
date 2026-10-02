@@ -35,6 +35,9 @@
 - (void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
     [self updateTheme];
+    // 确保导航栏可见
+    self.navigationController.navigationBarHidden = NO;
+    self.navigationController.navigationBar.prefersLargeTitles = NO;
     [self.tableView reloadData];
 }
 
@@ -75,16 +78,24 @@
     return DYLikeActionCount;
 }
 
-- (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
-    return @"二次确认";
+- (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section {
+    return 36;
 }
 
-- (void)tableView:(UITableView *)tableView willDisplayHeaderView:(UIView *)view forSection:(NSInteger)section {
-    if ([view isKindOfClass:UITableViewHeaderFooterView.class]) {
-        UITableViewHeaderFooterView *header = (UITableViewHeaderFooterView *)view;
-        header.textLabel.textColor = DYLikeSubTextColor();
-        header.textLabel.font = [UIFont systemFontOfSize:13];
-    }
+- (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section {
+    UIView *headerView = [[UIView alloc] init];
+    headerView.backgroundColor = UIColor.clearColor;
+    UILabel *label = [[UILabel alloc] init];
+    label.text = @"二次确认";
+    label.font = [UIFont systemFontOfSize:13];
+    label.textColor = DYLikeSubTextColor();
+    label.translatesAutoresizingMaskIntoConstraints = NO;
+    [headerView addSubview:label];
+    [NSLayoutConstraint activateConstraints:@[
+        [label.leadingAnchor constraintEqualToAnchor:headerView.leadingAnchor constant:20],
+        [label.centerYAnchor constraintEqualToAnchor:headerView.centerYAnchor]
+    ]];
+    return headerView;
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {

@@ -44,7 +44,7 @@ FOUNDATION_EXPORT UIColor *DYLikeSeparatorColor(void);
 static inline UIView *DYLikeRoundedCardBg(NSInteger rows, NSInteger row, UIColor *color) {
     UIView *bg = [[UIView alloc] init];
     bg.backgroundColor = color;
-    bg.layer.cornerRadius = 12;
+    bg.layer.cornerRadius = 10;
     bg.layer.masksToBounds = YES;
     if (rows == 1) {
         bg.layer.maskedCorners = kCALayerMinXMinYCorner | kCALayerMaxXMinYCorner | kCALayerMinXMaxYCorner | kCALayerMaxXMaxYCorner;
