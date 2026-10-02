@@ -10,15 +10,16 @@
 #import "HFBlacklistViewController.h"
 #import "HFBlacklist.h"
 #import "HFConstants.h"
+#import "../Core/DYLikeCore.h"
 #import "HFUserSelectViewController.h"
 
 static NSString *const kCellId = @"HFBlacklistCell";
 
 // v1.3.47 统一深灰主题（与设置页一致）
-#define HF_BG_COLOR        [UIColor colorWithRed:0.05 green:0.05 blue:0.06 alpha:1.0]
-#define HF_CELL_COLOR      [UIColor colorWithRed:0.11 green:0.11 blue:0.12 alpha:1.0]
-#define HF_TEXT_COLOR      [UIColor whiteColor]
-#define HF_SUBTEXT_COLOR   [UIColor colorWithWhite:0.6 alpha:1.0]
+#define HF_BG_COLOR        (DYLikeUserInterfaceStyle() == UIUserInterfaceStyleLight ? UIColor.systemGroupedBackgroundColor : [UIColor colorWithRed:0.05 green:0.05 blue:0.06 alpha:1.0])
+#define HF_CELL_COLOR      (DYLikeUserInterfaceStyle() == UIUserInterfaceStyleLight ? UIColor.secondarySystemGroupedBackgroundColor : [UIColor colorWithRed:0.11 green:0.11 blue:0.12 alpha:1.0])
+#define HF_TEXT_COLOR      (DYLikeUserInterfaceStyle() == UIUserInterfaceStyleLight ? UIColor.labelColor : [UIColor whiteColor])
+#define HF_SUBTEXT_COLOR   (DYLikeUserInterfaceStyle() == UIUserInterfaceStyleLight ? UIColor.secondaryLabelColor : [UIColor colorWithWhite:0.6 alpha:1.0])
 
 @interface HFBlacklistViewController ()
 @property(nonatomic, strong) NSMutableArray<NSString *> *items;
