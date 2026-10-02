@@ -117,6 +117,12 @@ static NSString *const kUserCellId = @"HFUserSelectCell";
     return cell;
 }
 
+- (void)tableView:(UITableView *)tableView willDisplayCell:(UITableViewCell *)cell forRowAtIndexPath:(NSIndexPath *)indexPath {
+    NSInteger rows = [self tableView:tableView numberOfRowsInSection:indexPath.section];
+    cell.backgroundView = DYLikeRoundedCardBg(rows, indexPath.row, HF_CELL_COLOR);
+    cell.backgroundColor = UIColor.clearColor;
+}
+
 #pragma mark - 选择
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
