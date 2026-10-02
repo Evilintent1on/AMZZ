@@ -1053,7 +1053,7 @@ static void hf_installSystemLayoutHooks(void) {
 /// v1.3.20：hook 消息会话列表 TableView 的行高查询——黑名单 cell 所在行返回 0，
 /// row 高度直接变 0，不再占空白位。
 /// 只对 AWEIMChatTabTableView 实例生效（不影响其他 TableView）。
-static void hf_installRowHeightHooks(void) {
+static void __attribute__((unused)) hf_installRowHeightHooks(void) {
     static BOOL installed = NO;
     if (installed) return;
     Class cls = NSClassFromString(@"AWEIMChatTabTableView");
@@ -1449,7 +1449,7 @@ static void hf_installProxyForwardHook(void) {
 /// 的转发入口。此前 hf_installProxyForwardHook 只 hook 了 TableView 的 BSTTableViewDelegateOptProxy，
 /// 而关注/粉丝列表的 collectionView delegate 是另一个 proxy（BSTCollectionViewDelegateProxy），
 /// sizeForItemAtIndexPath 经它转发到真实 target，导致我们的尺寸归零钩子一直没生效（sizeForItem=0）。
-static void hf_installCollectionProxyForwardHook(void) {
+static void __attribute__((unused)) hf_installCollectionProxyForwardHook(void) {
     static BOOL installed = NO;
     if (installed) return;
     Class proxyCls = NSClassFromString(@"BSTCollectionViewDelegateProxy");
