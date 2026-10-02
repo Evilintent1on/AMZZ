@@ -116,6 +116,19 @@
 }
 
 @end
+static UIViewController *DYLikeTop(UIViewController *controller) {
+    if (controller.presentedViewController && !controller.presentedViewController.isBeingDismissed) {
+        return DYLikeTop(controller.presentedViewController);
+    }
+    if ([controller isKindOfClass:UINavigationController.class]) {
+        return DYLikeTop(((UINavigationController *)controller).visibleViewController);
+    }
+    if ([controller isKindOfClass:UITabBarController.class]) {
+        return DYLikeTop(((UITabBarController *)controller).selectedViewController);
+    }
+    return controller;
+}
+
 void DYLikeOpenSettings(void) {
     dispatch_async(dispatch_get_main_queue(), ^{
         UIWindow *window = DYLikeActiveWindow();
