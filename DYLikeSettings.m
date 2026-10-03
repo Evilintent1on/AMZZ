@@ -165,26 +165,25 @@
 }
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
-    return 2;
+    return 1;
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    if (section == 0) return DYLikeActionCount;
-    return 3;
+    return DYLikeActionCount;
 }
 
 - (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section {
     UIView *header = [[UIView alloc] init];
     UILabel *label = [[UILabel alloc] init];
-    label.text = (section == 0) ? @"二次确认" : @"更多功能";
+    label.text = @"二次确认";
     label.font = [UIFont systemFontOfSize:13];
     label.textColor = [UIColor secondaryLabelColor];
     label.translatesAutoresizingMaskIntoConstraints = NO;
     [header addSubview:label];
     [NSLayoutConstraint activateConstraints:@[
         [label.leadingAnchor constraintEqualToAnchor:header.leadingAnchor constant:20],
-        [label.topAnchor constraintEqualToAnchor:header.topAnchor constant:5],
-        [label.bottomAnchor constraintEqualToAnchor:header.bottomAnchor constant:-5]
+        [label.topAnchor constraintEqualToAnchor:header.topAnchor constant:2],
+        [label.bottomAnchor constraintEqualToAnchor:header.bottomAnchor constant:-2]
     ]];
     return header;
 }
@@ -198,10 +197,7 @@
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
-    if (section == 0) {
-        return @"开启后，抖音对应操作会先显示确认弹窗；设置修改后立即生效。";
-    }
-    return nil;
+    return @"开启后，抖音对应操作会先显示确认弹窗；设置修改后立即生效。";
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
@@ -211,80 +207,23 @@
         titles = @[@"启用点赞二次确认", @"启用收藏二次确认", @"启用关注二次确认", @"启用评论点赞二次确认", @"启用评论点踩二次确认"];
     });
 
+    NSUInteger index = (NSUInteger)indexPath.row;
     UITableViewCell *cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault
                                                     reuseIdentifier:nil];
+    cell.textLabel.text = titles[index];
     cell.textLabel.font = [UIFont preferredFontForTextStyle:UIFontTextStyleSubheadline];
     cell.textLabel.adjustsFontForContentSizeCategory = YES;
     cell.textLabel.textColor = UIColor.labelColor;
     cell.backgroundColor = UIColor.secondarySystemGroupedBackgroundColor;
     cell.selectionStyle = UITableViewCellSelectionStyleNone;
 
-    if (indexPath.section == 0) {
-        NSUInteger index = (NSUInteger)indexPath.row;
-        cell.textLabel.text = titles[index];
-        UISwitch *toggle = [UISwitch new];
-        toggle.on = DYLikeEnabled((DYLikeActionType)index);
-        toggle.tag = (NSInteger)index;
-        toggle.accessibilityLabel = titles[index];
-        [toggle addTarget:self action:@selector(toggleChanged:) forControlEvents:UIControlEventValueChanged];
-        cell.accessoryView = toggle;
-        return cell;
-    }
-
-    // 更多功能区
-    static NSArray<NSString *> *moreTitles;
-    static dispatch_once_t onceToken2;
-    dispatch_once(&onceToken2, ^{
-        moreTitles = @[@"推荐直播5秒跳过", @"禁用长按锁定倍速", @"设置文案透明"];
-    });
-    cell.textLabel.text = moreTitles[indexPath.row];
-    if (indexPath.row == 0) {
-        UISwitch *toggle = [UISwitch new];
-        toggle.on = DYLikeBoolForKey(DYLikeLiveSkipAfter5sKey);
-        toggle.tag = 100;
-        [toggle addTarget:self action:@selector(moreToggleChanged:) forControlEvents:UIControlEventValueChanged];
-        cell.accessoryView = toggle;
-    } else if (indexPath.row == 1) {
-        UISwitch *toggle = [UISwitch new];
-        toggle.on = DYLikeBoolForKey(DYLikeDisableLockSpeedKey);
-        toggle.tag = 101;
-        [toggle addTarget:self action:@selector(moreToggleChanged:) forControlEvents:UIControlEventValueChanged];
-        cell.accessoryView = toggle;
-    } else {
-        // 文案透明：输入 0-1 小数
-        UITextField *field = [[UITextField alloc] initWithFrame:CGRectMake(0, 0, 80, 30)];
-        field.text = [[NSUserDefaults standardUserDefaults] objectForKey:DYLikeDescTransparentKey];
-        field.placeholder = @"0-1";
-        field.keyboardType = UIKeyboardTypeDecimalPad;
-        field.textAlignment = NSTextAlignmentRight;
-        field.font = [UIFont systemFontOfSize:15];
-        field.textColor = UIColor.labelColor;
-        [field addTarget:self action:@selector(transparentChanged:) forControlEvents:UIControlEventEditingDidEnd];
-        cell.accessoryView = field;
-        cell.selectionStyle = UITableViewCellSelectionStyleNone;
-    }
+    UISwitch *toggle = [UISwitch new];
+    toggle.on = DYLikeEnabled((DYLikeActionType)index);
+    toggle.tag = (NSInteger)index;
+    toggle.accessibilityLabel = titles[index];
+    [toggle addTarget:self action:@selector(toggleChanged:) forControlEvents:UIControlEventValueChanged];
+    cell.accessoryView = toggle;
     return cell;
-}
-
-- (void)moreToggleChanged:(UISwitch *)toggle {
-    if (toggle.tag == 100) {
-        [NSUserDefaults.standardUserDefaults setBool:toggle.isOn forKey:DYLikeLiveSkipAfter5sKey];
-    } else if (toggle.tag == 101) {
-        [NSUserDefaults.standardUserDefaults setBool:toggle.isOn forKey:DYLikeDisableLockSpeedKey];
-    }
-}
-
-- (void)transparentChanged:(UITextField *)field {
-    NSString *text = [field.text stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
-    if (text.length == 0) {
-        [[NSUserDefaults standardUserDefaults] removeObjectForKey:DYLikeDescTransparentKey];
-    } else {
-        CGFloat v = [text floatValue];
-        if (v < 0) v = 0;
-        if (v > 1) v = 1;
-        [[NSUserDefaults standardUserDefaults] setObject:[NSString stringWithFormat:@"%g", v] forKey:DYLikeDescTransparentKey];
-        field.text = [NSString stringWithFormat:@"%g", v];
-    }
 }
 
 - (void)toggleChanged:(UISwitch *)toggle {

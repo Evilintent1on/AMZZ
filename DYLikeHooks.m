@@ -386,7 +386,6 @@ static void DYInstallFeedButtonHook(void) {
     }
 }
 
-static void DYLikeInstallMoreHooks(void);
 static void DYInstallHooks(void) {
     static BOOL installed[sizeof(DYHooks) / sizeof(DYHooks[0])];
     NSUInteger added = 0;
@@ -414,8 +413,6 @@ static void DYInstallHooks(void) {
     DYInstallFeedButtonHook();
     DYLikeInstallThemeHooks();
     DYLikeInstallSettingsHook();
-    // 暂时禁用更多功能 hook（导致闪退，待排查）
-    // DYLikeInstallMoreHooks();
     if (added) NSLog(@"[DYSecondaryConfirmation] Installed %lu action hooks", (unsigned long)added);
 }
 
@@ -432,125 +429,5 @@ __attribute__((constructor)) static void DYLikeStart(void) {
     @autoreleasepool {
         DYLikeEnsureDefaults();
         _dyld_register_func_for_add_image(DYImageLoaded);
-    }
-}
-
-// ========== 更多功能：文案透明 ==========
-static IMP dyOrigSetAlpha = NULL;
-static void DYLikeHookedSetAlpha(id self, SEL _cmd, CGFloat alpha) {
-    NSString *transparentValue = [[NSUserDefaults standardUserDefaults] objectForKey:DYLikeDescTransparentKey];
-    CGFloat finalAlpha = alpha;
-    if (transparentValue && transparentValue.length > 0) {
-        CGFloat alphaValue = [transparentValue floatValue];
-        if (alphaValue >= 0.0 && alphaValue <= 1.0) {
-            finalAlpha = (alphaValue < 0.011) ? 0.011 : alphaValue;
-        } else {
-            finalAlpha = 1.0;
-        }
-    }
-    ((void (*)(id, SEL, CGFloat))dyOrigSetAlpha)(self, _cmd, finalAlpha);
-}
-
-// ========== 更多功能：禁用长按锁定倍速 ==========
-static IMP dyOrigCanShowLockSpeed = NULL;
-static BOOL DYLikeHookedCanShowLockSpeed(id self, SEL _cmd) {
-    if (DYLikeBoolForKey(DYLikeDisableLockSpeedKey)) {
-        return NO;
-    }
-    return ((BOOL (*)(id, SEL))dyOrigCanShowLockSpeed)(self, _cmd);
-}
-
-// ========== 更多功能：推荐直播5秒跳过 ==========
-static NSTimer *dyLikeLiveSkipTimer = nil;
-
-static void DYLikeCancelLiveSkipTimer(void) {
-    if (dyLikeLiveSkipTimer) {
-        [dyLikeLiveSkipTimer invalidate];
-        dyLikeLiveSkipTimer = nil;
-    }
-}
-
-static BOOL DYLikeAwemeIsRecommendFeed(id aweme) {
-    if (![aweme respondsToSelector:@selector(referString)]) return NO;
-    NSString *refer = ((NSString * (*)(id, SEL))objc_msgSend)(aweme, @selector(referString));
-    return [refer isEqualToString:@"homepage_hot"];
-}
-
-static BOOL DYLikeAwemeHasLiveSignal(id aweme) {
-    if ([aweme respondsToSelector:@selector(isLive)]) {
-        BOOL isLive = ((BOOL (*)(id, SEL))objc_msgSend)(aweme, @selector(isLive));
-        if (isLive) return YES;
-    }
-    if ([aweme respondsToSelector:@selector(cellRoom)]) {
-        id room = ((id (*)(id, SEL))objc_msgSend)(aweme, @selector(cellRoom));
-        if (room != nil) return YES;
-    }
-    if ([aweme respondsToSelector:@selector(videoFeedTag)]) {
-        NSString *tag = ((NSString * (*)(id, SEL))objc_msgSend)(aweme, @selector(videoFeedTag));
-        if ([tag isEqualToString:@"直播中"]) return YES;
-    }
-    return NO;
-}
-
-static UIViewController *DYLikeFindVCOfClass(Class cls, UIViewController *root) {
-    if (!root) return nil;
-    if ([root isKindOfClass:cls]) return root;
-    for (UIViewController *child in root.childViewControllers) {
-        UIViewController *found = DYLikeFindVCOfClass(cls, child);
-        if (found) return found;
-    }
-    if ([root isKindOfClass:[UINavigationController class]]) {
-        for (UIViewController *vc in [(UINavigationController *)root viewControllers]) {
-            UIViewController *found = DYLikeFindVCOfClass(cls, vc);
-            if (found) return found;
-        }
-    }
-    if (root.presentedViewController) {
-        return DYLikeFindVCOfClass(cls, root.presentedViewController);
-    }
-    return nil;
-}
-
-static IMP dyOrigAwemeIndexWillChange = NULL;
-static void DYLikeHookedAwemeIndexWillChange(id self, SEL _cmd, id aweme, NSInteger index) {
-    ((void (*)(id, SEL, id, NSInteger))dyOrigAwemeIndexWillChange)(self, _cmd, aweme, index);
-    DYLikeCancelLiveSkipTimer();
-    if (!DYLikeBoolForKey(DYLikeLiveSkipAfter5sKey)) return;
-    Class awemeCls = NSClassFromString(@"AWEAwemeModel");
-    if (!awemeCls || ![aweme isKindOfClass:awemeCls]) return;
-    if (!DYLikeAwemeIsRecommendFeed(aweme)) return;
-    if (!DYLikeAwemeHasLiveSignal(aweme)) return;
-    NSInteger nextIndex = index + 1;
-    dyLikeLiveSkipTimer = [NSTimer scheduledTimerWithTimeInterval:5.0 repeats:NO block:^(__unused NSTimer *timer) {
-        dyLikeLiveSkipTimer = nil;
-        UIWindow *window = DYLikeActiveWindow();
-        if (!window) return;
-        Class feedCls = NSClassFromString(@"AWEFeedTableViewController");
-        if (!feedCls) return;
-        UIViewController *feedVC = DYLikeFindVCOfClass(feedCls, window.rootViewController);
-        if (feedVC && [feedVC respondsToSelector:@selector(setCurrentPlayIndex:)]) {
-            ((void (*)(id, SEL, NSInteger))objc_msgSend)(feedVC, @selector(setCurrentPlayIndex:), nextIndex);
-        }
-    }];
-}
-
-static void DYLikeInstallMoreHooks(void) {
-    // 文案透明
-    Class descCls = NSClassFromString(@"AWEPlayInteractionDescriptionLabel");
-    if (descCls) {
-        Method m = class_getInstanceMethod(descCls, @selector(setAlpha:));
-        if (m) dyOrigSetAlpha = method_setImplementation(m, (IMP)DYLikeHookedSetAlpha);
-    }
-    // 禁用长按锁定倍速
-    Class lockCls = NSClassFromString(@"AWEDSpeedLockSpeedContainer");
-    if (lockCls) {
-        Method m = class_getInstanceMethod(lockCls, @selector(canShowLockSpeed));
-        if (m) dyOrigCanShowLockSpeed = method_setImplementation(m, (IMP)DYLikeHookedCanShowLockSpeed);
-    }
-    // 直播5秒跳过
-    Class feedCls = NSClassFromString(@"AWEFeedContainerViewController");
-    if (feedCls) {
-        Method m = class_getInstanceMethod(feedCls, @selector(aweme:currentIndexWillChange:));
-        if (m) dyOrigAwemeIndexWillChange = method_setImplementation(m, (IMP)DYLikeHookedAwemeIndexWillChange);
     }
 }
