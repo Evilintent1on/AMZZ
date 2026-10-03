@@ -104,33 +104,6 @@ UIUserInterfaceStyle DYLikeUserInterfaceStyle(void) {
     return style == UIUserInterfaceStyleDark ? UIUserInterfaceStyleDark : UIUserInterfaceStyleLight;
 }
 
-static BOOL DYLikeIsLightTheme(void) {
-    return DYLikeUserInterfaceStyle() == UIUserInterfaceStyleLight;
-}
-
-// DYYY 风格主题色：深色纯黑背景 + 深灰卡片，浅色跟系统
-UIColor *DYLikeBgColor(void) {
-    if (DYLikeIsLightTheme()) return UIColor.systemGroupedBackgroundColor;
-    return [UIColor colorWithRed:0.06 green:0.06 blue:0.07 alpha:1]; // #0F0F12，比纯黑稍浅，对齐DYYY
-}
-
-UIColor *DYLikeCellColor(void) {
-    if (DYLikeIsLightTheme()) return UIColor.whiteColor;
-    return [UIColor colorWithRed:0.11 green:0.11 blue:0.12 alpha:1]; // #1C1C1E
-}
-
-UIColor *DYLikeTextColor(void) {
-    return UIColor.labelColor;
-}
-
-UIColor *DYLikeSubTextColor(void) {
-    return UIColor.secondaryLabelColor;
-}
-
-UIColor *DYLikeSeparatorColor(void) {
-    return UIColor.separatorColor;
-}
-
 static void DYLikeNotifyThemeChange(void) {
     static BOOL scheduled;
     dispatch_async(dispatch_get_main_queue(), ^{

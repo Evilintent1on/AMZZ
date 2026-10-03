@@ -12,19 +12,10 @@
     [super viewDidLoad];
     self.title = @"AMZZ";
     self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
-    // 返回按钮（DYYY 风格：单纯箭头，无圆形背景）
-    UIButton *backBtn = [UIButton buttonWithType:UIButtonTypeSystem];
-    [backBtn setImage:[UIImage systemImageNamed:@"chevron.left"] forState:UIControlStateNormal];
-    backBtn.tintColor = DYLikeTextColor();
-    backBtn.frame = CGRectMake(0, 0, 30, 30);
-    [backBtn addTarget:self action:@selector(closeSettings) forControlEvents:UIControlEventTouchUpInside];
-    UIBarButtonItem *backItem = [[UIBarButtonItem alloc] initWithCustomView:backBtn];
-    self.navigationItem.leftBarButtonItem = backItem;
-    self.tableView.backgroundColor = DYLikeBgColor();
-    self.tableView.separatorColor = DYLikeSeparatorColor();
-    self.tableView.separatorInset = UIEdgeInsetsMake(0, 56, 0, 0);
-    self.tableView.rowHeight = 54;
-    self.tableView.estimatedRowHeight = 54;
+    self.tableView.backgroundColor = UIColor.systemGroupedBackgroundColor;
+    self.tableView.separatorColor = UIColor.separatorColor;
+    self.tableView.rowHeight = UITableViewAutomaticDimension;
+    self.tableView.estimatedRowHeight = 58;
     self.tableView.sectionHeaderHeight = UITableViewAutomaticDimension;
     self.tableView.sectionFooterHeight = UITableViewAutomaticDimension;
     self.tableView.showsVerticalScrollIndicator = NO;
@@ -38,9 +29,6 @@
 - (void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
     [self updateTheme];
-    // 确保导航栏可见
-    self.navigationController.navigationBarHidden = NO;
-    self.navigationController.navigationBar.prefersLargeTitles = NO;
     [self.tableView reloadData];
 }
 
@@ -50,13 +38,11 @@
     UITraitCollection *theme = [UITraitCollection traitCollectionWithUserInterfaceStyle:self.overrideUserInterfaceStyle];
     UINavigationBarAppearance *appearance = [UINavigationBarAppearance new];
     [appearance configureWithOpaqueBackground];
-    appearance.backgroundColor = [DYLikeBgColor() resolvedColorWithTraitCollection:theme];
-    appearance.titleTextAttributes = @{NSForegroundColorAttributeName: [DYLikeTextColor() resolvedColorWithTraitCollection:theme]};
+    appearance.backgroundColor = [UIColor.systemGroupedBackgroundColor resolvedColorWithTraitCollection:theme];
+    appearance.titleTextAttributes = @{NSForegroundColorAttributeName: [UIColor.labelColor resolvedColorWithTraitCollection:theme]};
     self.navigationItem.standardAppearance = appearance;
     self.navigationItem.scrollEdgeAppearance = appearance;
     self.navigationItem.compactAppearance = appearance;
-    self.tableView.backgroundColor = DYLikeBgColor();
-    self.tableView.separatorColor = DYLikeSeparatorColor();
     [self setNeedsStatusBarAppearanceUpdate];
 }
 
@@ -81,24 +67,8 @@
     return DYLikeActionCount;
 }
 
-- (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section {
-    return 36;
-}
-
-- (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section {
-    UIView *headerView = [[UIView alloc] init];
-    headerView.backgroundColor = UIColor.clearColor;
-    UILabel *label = [[UILabel alloc] init];
-    label.text = @"二次确认";
-    label.font = [UIFont systemFontOfSize:13];
-    label.textColor = DYLikeSubTextColor();
-    label.translatesAutoresizingMaskIntoConstraints = NO;
-    [headerView addSubview:label];
-    [NSLayoutConstraint activateConstraints:@[
-        [label.leadingAnchor constraintEqualToAnchor:headerView.leadingAnchor constant:20],
-        [label.centerYAnchor constraintEqualToAnchor:headerView.centerYAnchor]
-    ]];
-    return headerView;
+- (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
+    return @"功能开关";
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
@@ -116,9 +86,10 @@
     UITableViewCell *cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault
                                                     reuseIdentifier:nil];
     cell.textLabel.text = titles[index];
-    cell.textLabel.font = [UIFont systemFontOfSize:17];
-    cell.textLabel.textColor = DYLikeTextColor();
-    cell.backgroundColor = UIColor.clearColor;
+    cell.textLabel.font = [UIFont preferredFontForTextStyle:UIFontTextStyleSubheadline];
+    cell.textLabel.adjustsFontForContentSizeCategory = YES;
+    cell.textLabel.textColor = UIColor.labelColor;
+    cell.backgroundColor = UIColor.secondarySystemGroupedBackgroundColor;
     cell.selectionStyle = UITableViewCellSelectionStyleNone;
 
     UISwitch *toggle = [UISwitch new];
@@ -128,12 +99,6 @@
     [toggle addTarget:self action:@selector(toggleChanged:) forControlEvents:UIControlEventValueChanged];
     cell.accessoryView = toggle;
     return cell;
-}
-
-- (void)tableView:(UITableView *)tableView willDisplayCell:(UITableViewCell *)cell forRowAtIndexPath:(NSIndexPath *)indexPath {
-    NSInteger rows = [self tableView:tableView numberOfRowsInSection:indexPath.section];
-    cell.backgroundView = DYLikeRoundedCardBg(rows, indexPath.row, DYLikeCellColor());
-    cell.backgroundColor = UIColor.clearColor;
 }
 
 - (void)toggleChanged:(UISwitch *)toggle {
@@ -148,11 +113,7 @@
 }
 
 - (void)closeSettings {
-    if (self.navigationController && self.navigationController.viewControllers.count > 1) {
-        [self.navigationController popViewControllerAnimated:YES];
-    } else {
-        [self dismissViewControllerAnimated:YES completion:nil];
-    }
+    [self dismissViewControllerAnimated:YES completion:nil];
 }
 
 @end
