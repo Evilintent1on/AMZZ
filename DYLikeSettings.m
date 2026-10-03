@@ -2,16 +2,14 @@
 #import "../Core/DYLikeCore.h"
 #import <objc/runtime.h>
 
-@implementation DYLikeSettingsViewController
-
-- (instancetype)init {
-    return [super initWithStyle:UITableViewStyleInsetGrouped];
-}
-
 @implementation DYLikeSettingsViewController {
     UIView *_amzzHeader;
     UIImageView *_amzzBackArrow;
     UILabel *_amzzTitleLabel;
+}
+
+- (instancetype)init {
+    return [super initWithStyle:UITableViewStyleInsetGrouped];
 }
 
 - (instancetype)init {
