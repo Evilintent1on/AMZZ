@@ -12,15 +12,9 @@
     [super viewDidLoad];
     self.title = @"AMZZ";
     self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
-    // 自定义返回按钮：纯箭头无玻璃（UIButtonTypeCustom 不会被 iOS 26 套玻璃）
+    // 隐藏返回按钮（顶部只保留 AMZZ，右滑返回）
     self.navigationItem.hidesBackButton = YES;
-    UIButton *backBtn = [UIButton buttonWithType:UIButtonTypeCustom];
-    UIImage *chevron = [[UIImage systemImageNamed:@"chevron.left"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
-    [backBtn setImage:chevron forState:UIControlStateNormal];
-    backBtn.tintColor = UIColor.labelColor;
-    backBtn.frame = CGRectMake(0, 0, 32, 32);
-    [backBtn addTarget:self action:@selector(amzzGoBack) forControlEvents:UIControlEventTouchUpInside];
-    self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithCustomView:backBtn];
+    self.navigationItem.leftBarButtonItem = nil;
     self.tableView.backgroundColor = UIColor.systemGroupedBackgroundColor;
     self.tableView.separatorColor = UIColor.separatorColor;
     self.tableView.rowHeight = UITableViewAutomaticDimension;
@@ -33,10 +27,6 @@
     [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(updateTheme)
         name:UIApplicationDidBecomeActiveNotification object:nil];
     [self updateTheme];
-}
-
-- (void)amzzGoBack {
-    [self.navigationController popViewControllerAnimated:YES];
 }
 
 - (void)viewWillAppear:(BOOL)animated {
@@ -86,7 +76,7 @@
     UIView *header = [[UIView alloc] init];
     UILabel *label = [[UILabel alloc] init];
     label.text = @"二次确认";
-    label.font = [UIFont systemFontOfSize:14];
+    label.font = [UIFont systemFontOfSize:13];
     label.textColor = [UIColor secondaryLabelColor];
     label.translatesAutoresizingMaskIntoConstraints = NO;
     [header addSubview:label];
