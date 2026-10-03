@@ -12,9 +12,20 @@
     [super viewDidLoad];
     self.title = @"AMZZ";
     self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
-    // 隐藏返回按钮（顶部只保留 AMZZ，右滑返回）
+    // 返回按钮：UIImageView + 点击手势，不用 UIButton，iOS 26 无法套玻璃
     self.navigationItem.hidesBackButton = YES;
-    self.navigationItem.leftBarButtonItem = nil;
+    UIImageView *backImageView = [[UIImageView alloc] initWithImage:
+        [[UIImage systemImageNamed:@"chevron.left"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate]];
+    backImageView.tintColor = UIColor.labelColor;
+    backImageView.contentMode = UIViewContentModeScaleAspectFit;
+    backImageView.frame = CGRectMake(0, 0, 28, 28);
+    backImageView.userInteractionEnabled = YES;
+    [backImageView addGestureRecognizer:[[UITapGestureRecognizer alloc]
+        initWithTarget:self action:@selector(amzzGoBackTap:)]];
+    UIView *backContainer = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 32, 32)];
+    backImageView.center = backContainer.center;
+    [backContainer addSubview:backImageView];
+    self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithCustomView:backContainer];
     self.tableView.backgroundColor = UIColor.systemGroupedBackgroundColor;
     self.tableView.separatorColor = UIColor.separatorColor;
     self.tableView.rowHeight = UITableViewAutomaticDimension;
@@ -29,13 +40,16 @@
     [self updateTheme];
 }
 
+- (void)amzzGoBackTap:(UITapGestureRecognizer *)gesture {
+    [self.navigationController popViewControllerAnimated:YES];
+}
+
 - (void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
     // 确保导航栏显示（AMZZ 标题）
     self.navigationController.navigationBarHidden = NO;
-    // 隐藏返回按钮（顶部只保留 AMZZ）
+    // 隐藏系统返回按钮（用自定义无玻璃箭头）
     self.navigationItem.hidesBackButton = YES;
-    self.navigationItem.leftBarButtonItem = nil;
     [self updateTheme];
     [self.tableView reloadData];
 }
