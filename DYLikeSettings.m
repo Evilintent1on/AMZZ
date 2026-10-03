@@ -12,10 +12,10 @@
     [super viewDidLoad];
     self.title = @"AMZZ";
     self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
-    self.tableView.backgroundColor = UIColor.systemGroupedBackgroundColor;
-    self.tableView.separatorColor = UIColor.separatorColor;
-    self.tableView.rowHeight = UITableViewAutomaticDimension;
-    self.tableView.estimatedRowHeight = 58;
+    self.tableView.backgroundColor = [UIColor colorWithRed:0.08 green:0.08 blue:0.10 alpha:1.0];
+    self.tableView.separatorColor = [UIColor colorWithWhite:1.0 alpha:0.08];
+    self.tableView.rowHeight = 52;
+    self.tableView.estimatedRowHeight = 52;
     self.tableView.sectionHeaderHeight = UITableViewAutomaticDimension;
     self.tableView.sectionFooterHeight = UITableViewAutomaticDimension;
     self.tableView.showsVerticalScrollIndicator = NO;
@@ -35,14 +35,17 @@
 - (void)updateTheme {
     UIUserInterfaceStyle style = DYLikeUserInterfaceStyle();
     if (self.overrideUserInterfaceStyle != style) self.overrideUserInterfaceStyle = style;
-    UITraitCollection *theme = [UITraitCollection traitCollectionWithUserInterfaceStyle:self.overrideUserInterfaceStyle];
+    // 深色导航栏（DYYY 风格）
     UINavigationBarAppearance *appearance = [UINavigationBarAppearance new];
     [appearance configureWithOpaqueBackground];
-    appearance.backgroundColor = [UIColor.systemGroupedBackgroundColor resolvedColorWithTraitCollection:theme];
-    appearance.titleTextAttributes = @{NSForegroundColorAttributeName: [UIColor.labelColor resolvedColorWithTraitCollection:theme]};
+    appearance.backgroundColor = [UIColor colorWithRed:0.08 green:0.08 blue:0.10 alpha:1.0];
+    appearance.titleTextAttributes = @{NSForegroundColorAttributeName: [UIColor whiteColor]};
+    appearance.shadowColor = [UIColor clearColor];
     self.navigationItem.standardAppearance = appearance;
     self.navigationItem.scrollEdgeAppearance = appearance;
     self.navigationItem.compactAppearance = appearance;
+    // 使用系统原生返回按钮（不自定义 leftBarButtonItem）
+    self.navigationController.navigationBar.tintColor = [UIColor whiteColor];
     [self setNeedsStatusBarAppearanceUpdate];
 }
 
@@ -52,7 +55,7 @@
 }
 
 - (UIStatusBarStyle)preferredStatusBarStyle {
-    return DYLikeUserInterfaceStyle() == UIUserInterfaceStyleDark ? UIStatusBarStyleLightContent : UIStatusBarStyleDarkContent;
+    return UIStatusBarStyleLightContent;
 }
 
 - (void)dealloc {
@@ -68,7 +71,7 @@
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
-    return @"功能开关";
+    return @"二次确认";
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
