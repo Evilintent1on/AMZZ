@@ -74,7 +74,7 @@
     // 初始位置：y = -headerH（配合 contentInset）
     _amzzHeader.frame = CGRectMake(self.tableView.contentOffset.x, self.tableView.contentOffset.y, w, headerH);
     _amzzHeader.backgroundColor = UIColor.systemGroupedBackgroundColor;
-    _amzzBackArrow.frame = CGRectMake(12, statusH + 10, 24, 24);
+    _amzzBackArrow.frame = CGRectMake(14, statusH + 13, 18, 18);
     _amzzTitleLabel.frame = CGRectMake(0, statusH, w, 44);
     self.tableView.contentInset = UIEdgeInsetsMake(headerH, 0, 0, 0);
     self.tableView.scrollIndicatorInsets = self.tableView.contentInset;
@@ -157,13 +157,13 @@
     [header addSubview:label];
     [NSLayoutConstraint activateConstraints:@[
         [label.leadingAnchor constraintEqualToAnchor:header.leadingAnchor constant:20],
-        [label.bottomAnchor constraintEqualToAnchor:header.bottomAnchor constant:-8]
+        [label.bottomAnchor constraintEqualToAnchor:header.bottomAnchor constant:-6]
     ]];
     return header;
 }
 
 - (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section {
-    return 36;
+    return 28;
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
