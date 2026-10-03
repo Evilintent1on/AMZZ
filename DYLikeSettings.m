@@ -520,7 +520,7 @@ void DYLikeInstallSettingsHook(void) {
         valid &= DYLikeSet(item, @"cellTappedBlock", ^{ DYLikeOpenSettings(); });
         if (valid) {
             id existingItems = DYLikeRead(targetSection, @"itemArray");
-            NSMutableArray *items = existingItems ? [[existingItems mutableCopy] : [[NSMutableArray alloc] init];
+            NSMutableArray *items = existingItems ? [existingItems mutableCopy] : [[NSMutableArray alloc] init];
             [items addObject:item];
             DYLikeSet(targetSection, @"itemArray", items);
         }
