@@ -3,10 +3,14 @@
 #import <objc/runtime.h>
 
 @interface DYLikeSettingsViewController () <UITableViewDataSource, UITableViewDelegate>
-@property (nonatomic, strong) UITableView *tableView;
 @end
 
 @implementation DYLikeSettingsViewController
+
+- (instancetype)init {
+    self = [super initWithStyle:UITableViewStyleGrouped];
+    return self;
+}
 
 - (void)viewDidLoad {
     [super viewDidLoad];
@@ -72,7 +76,7 @@
 }
 
 - (void)setupTableView {
-    self.tableView = [[UITableView alloc] initWithFrame:CGRectZero style:UITableViewStyleGrouped];
+    // UITableViewController 已创建 tableView（Grouped 样式），只需配置
     self.tableView.translatesAutoresizingMaskIntoConstraints = NO;
     self.tableView.backgroundColor = [UIColor clearColor];
     self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
