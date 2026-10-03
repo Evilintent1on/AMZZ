@@ -33,50 +33,42 @@
     [self updateTheme];
 }
 
-// DYYY 风格自定义头部
+// DYYY 风格自定义头部（frame 布局，避免 AutoLayout 在 tableView 上错乱）
 - (void)setupCustomHeader {
-    UIView *header = [[UIView alloc] init];
+    CGFloat statusH = self.view.safeAreaInsets.top;
+    if (statusH < 20) statusH = 47; // 兜底
+    CGFloat headerH = statusH + 44;
+
+    UIView *header = [[UIView alloc] initWithFrame:CGRectMake(0, 0, self.view.bounds.size.width, headerH)];
     header.backgroundColor = [UIColor colorWithRed:0.08 green:0.08 blue:0.10 alpha:1.0];
-    header.translatesAutoresizingMaskIntoConstraints = NO;
+    header.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleBottomMargin;
+    header.tag = 999;
     [self.view addSubview:header];
 
-    // 返回按钮：纯 chevron，无玻璃底（UIButtonTypeCustom 不会被套玻璃）
+    // 返回按钮：纯 chevron，无玻璃底
     UIButton *backBtn = [UIButton buttonWithType:UIButtonTypeCustom];
     UIImage *chevron = [[UIImage systemImageNamed:@"chevron.left"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
     [backBtn setImage:chevron forState:UIControlStateNormal];
     backBtn.tintColor = [UIColor whiteColor];
-    backBtn.translatesAutoresizingMaskIntoConstraints = NO;
+    backBtn.frame = CGRectMake(8, headerH - 42, 40, 40);
+    backBtn.autoresizingMask = UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleRightMargin;
     [backBtn addTarget:self action:@selector(customGoBack) forControlEvents:UIControlEventTouchUpInside];
     [header addSubview:backBtn];
 
-    // AMZZ 标题
-    UILabel *titleLabel = [[UILabel alloc] init];
+    // AMZZ 标题居中
+    UILabel *titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, headerH - 44, header.bounds.size.width, 44)];
     titleLabel.text = @"AMZZ";
     titleLabel.font = [UIFont boldSystemFontOfSize:17];
     titleLabel.textColor = [UIColor whiteColor];
     titleLabel.textAlignment = NSTextAlignmentCenter;
-    titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
+    titleLabel.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleTopMargin;
     [header addSubview:titleLabel];
 
-    UILayoutGuide *safe = self.view.safeAreaLayoutGuide;
-    [NSLayoutConstraint activateConstraints:@[
-        [header.topAnchor constraintEqualToAnchor:self.view.topAnchor],
-        [header.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
-        [header.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
-        [header.bottomAnchor constraintEqualToAnchor:safe.topAnchor constant:44],
-
-        [backBtn.leadingAnchor constraintEqualToAnchor:header.leadingAnchor constant:8],
-        [backBtn.bottomAnchor constraintEqualToAnchor:header.bottomAnchor constant:-2],
-        [backBtn.widthAnchor constraintEqualToConstant:40],
-        [backBtn.heightAnchor constraintEqualToConstant:40],
-
-        [titleLabel.centerXAnchor constraintEqualToAnchor:header.centerXAnchor],
-        [titleLabel.bottomAnchor constraintEqualToAnchor:header.bottomAnchor constant:-11],
-    ]];
-
     // tableView 顶部留出头部位置
-    self.tableView.contentInset = UIEdgeInsetsMake(44 + safe.layoutFrame.origin.y, 0, 0, 0);
+    self.tableView.contentInset = UIEdgeInsetsMake(headerH, 0, 0, 0);
     self.tableView.scrollIndicatorInsets = self.tableView.contentInset;
+    // 确保头部在最上层且可点击
+    [self.view bringSubviewToFront:header];
 }
 
 - (void)customGoBack {
@@ -86,6 +78,17 @@
 - (void)handleEdgePan:(UIScreenEdgePanGestureRecognizer *)gesture {
     if (gesture.state == UIGestureRecognizerStateRecognized) {
         [self.navigationController popViewControllerAnimated:YES];
+    }
+}
+
+// 头部固定在顶部不随滚动
+- (void)scrollViewDidScroll:(UIScrollView *)scrollView {
+    UIView *header = [self.view viewWithTag:999];
+    if (header) {
+        CGRect f = header.frame;
+        f.origin.y = scrollView.contentOffset.y;
+        header.frame = f;
+        [self.view bringSubviewToFront:header];
     }
 }
 
