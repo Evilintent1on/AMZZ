@@ -29,15 +29,12 @@
 - (void)setupAppearance {
     UINavigationBar *bar = self.navigationController.navigationBar;
 
-    bar.prefersLargeTitles = YES;
+    // 常规标题栏（非大标题），跟截图的 DYYY 一样
+    bar.prefersLargeTitles = NO;
     self.navigationItem.largeTitleDisplayMode =
-        UINavigationItemLargeTitleDisplayModeAlways;
+        UINavigationItemLargeTitleDisplayModeNever;
 
     bar.tintColor = UIColor.whiteColor;
-
-    bar.largeTitleTextAttributes = @{
-        NSForegroundColorAttributeName : UIColor.whiteColor
-    };
 
     bar.titleTextAttributes = @{
         NSForegroundColorAttributeName : UIColor.whiteColor
@@ -51,10 +48,6 @@
 
         appearance.backgroundColor =
             [UIColor colorWithWhite:0.05 alpha:0.85];
-
-        appearance.largeTitleTextAttributes = @{
-            NSForegroundColorAttributeName : UIColor.whiteColor
-        };
 
         appearance.titleTextAttributes = @{
             NSForegroundColorAttributeName : UIColor.whiteColor
