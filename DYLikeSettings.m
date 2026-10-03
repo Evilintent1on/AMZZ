@@ -8,56 +8,17 @@
     return [super initWithStyle:UITableViewStyleInsetGrouped];
 }
 
-// 是否深色模式
-- (BOOL)isDarkMode {
-    return self.traitCollection.userInterfaceStyle == UIUserInterfaceStyleDark;
-}
-
-// 自适应背景色（深：0.08 / 浅：Yuki 同款浅灰）
-- (UIColor *)amzzBackgroundColor {
-    if ([self isDarkMode]) {
-        return [UIColor colorWithRed:0.08 green:0.08 blue:0.10 alpha:1.0];
-    } else {
-        return [UIColor colorWithRed:0.95 green:0.95 blue:0.97 alpha:1.0];
-    }
-}
-
-// 自适应前景色（深：白 / 浅：黑）
-- (UIColor *)amzzForegroundColor {
-    return [self isDarkMode] ? [UIColor whiteColor] : [UIColor blackColor];
-}
-
-// 自适应次要文字色
-- (UIColor *)amzzSecondaryColor {
-    return [self isDarkMode] ? [UIColor colorWithWhite:1.0 alpha:0.5] : [UIColor colorWithWhite:0.0 alpha:0.5];
-}
-
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.title = @"AMZZ";
     self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
-    // 隐藏系统返回按钮，用自定义纯箭头（UIButtonTypeCustom 无玻璃效果）
-    self.navigationItem.hidesBackButton = YES;
-    UIButton *backBtn = [UIButton buttonWithType:UIButtonTypeCustom];
-    UIImage *chevron = [[UIImage systemImageNamed:@"chevron.left"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
-    [backBtn setImage:chevron forState:UIControlStateNormal];
-    backBtn.tintColor = [self amzzForegroundColor];
-    backBtn.frame = CGRectMake(0, 0, 32, 32);
-    [backBtn addTarget:self action:@selector(customGoBack) forControlEvents:UIControlEventTouchUpInside];
-    self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithCustomView:backBtn];
-
-    self.tableView.backgroundColor = [self amzzBackgroundColor];
-    self.tableView.separatorColor = [self isDarkMode] ? [UIColor colorWithWhite:1.0 alpha:0.08] : [UIColor colorWithWhite:0.0 alpha:0.08];
-    self.tableView.rowHeight = 52;
-    self.tableView.estimatedRowHeight = 52;
+    self.tableView.backgroundColor = UIColor.systemGroupedBackgroundColor;
+    self.tableView.separatorColor = UIColor.separatorColor;
+    self.tableView.rowHeight = UITableViewAutomaticDimension;
+    self.tableView.estimatedRowHeight = 58;
     self.tableView.sectionHeaderHeight = UITableViewAutomaticDimension;
     self.tableView.sectionFooterHeight = UITableViewAutomaticDimension;
     self.tableView.showsVerticalScrollIndicator = NO;
-    // 右滑返回手势（左边缘滑动 pop，push 时系统自带，这里加固）
-    UIScreenEdgePanGestureRecognizer *edgePan = [[UIScreenEdgePanGestureRecognizer alloc]
-        initWithTarget:self action:@selector(handleEdgePan:)];
-    edgePan.edges = UIRectEdgeLeft;
-    [self.view addGestureRecognizer:edgePan];
     [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(updateTheme)
         name:DYLikeThemeDidChangeNotification object:nil];
     [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(updateTheme)
@@ -65,44 +26,23 @@
     [self updateTheme];
 }
 
-- (void)customGoBack {
-    [self.navigationController popViewControllerAnimated:YES];
-}
-
-- (void)handleEdgePan:(UIScreenEdgePanGestureRecognizer *)gesture {
-    if (gesture.state == UIGestureRecognizerStateRecognized) {
-        [self.navigationController popViewControllerAnimated:YES];
-    }
-}
-
 - (void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
-    // 显示系统导航栏
-    self.navigationController.navigationBarHidden = NO;
     [self updateTheme];
     [self.tableView reloadData];
 }
 
 - (void)updateTheme {
-    // 不强制覆盖，跟随系统深浅色
-    self.overrideUserInterfaceStyle = UIUserInterfaceStyleUnspecified;
-    // 刷新自适应颜色
-    self.tableView.backgroundColor = [self amzzBackgroundColor];
-    self.tableView.separatorColor = [self isDarkMode] ? [UIColor colorWithWhite:1.0 alpha:0.08] : [UIColor colorWithWhite:0.0 alpha:0.08];
-    // 导航栏自适应
+    UIUserInterfaceStyle style = DYLikeUserInterfaceStyle();
+    if (self.overrideUserInterfaceStyle != style) self.overrideUserInterfaceStyle = style;
+    UITraitCollection *theme = [UITraitCollection traitCollectionWithUserInterfaceStyle:self.overrideUserInterfaceStyle];
     UINavigationBarAppearance *appearance = [UINavigationBarAppearance new];
     [appearance configureWithOpaqueBackground];
-    appearance.backgroundColor = [self amzzBackgroundColor];
-    appearance.titleTextAttributes = @{NSForegroundColorAttributeName: [self amzzForegroundColor]};
-    appearance.shadowColor = [UIColor clearColor];
+    appearance.backgroundColor = [UIColor.systemGroupedBackgroundColor resolvedColorWithTraitCollection:theme];
+    appearance.titleTextAttributes = @{NSForegroundColorAttributeName: [UIColor.labelColor resolvedColorWithTraitCollection:theme]};
     self.navigationItem.standardAppearance = appearance;
     self.navigationItem.scrollEdgeAppearance = appearance;
     self.navigationItem.compactAppearance = appearance;
-    // 更新返回按钮颜色
-    if ([self.navigationItem.leftBarButtonItem.customView isKindOfClass:UIButton.class]) {
-        ((UIButton *)self.navigationItem.leftBarButtonItem.customView).tintColor = [self amzzForegroundColor];
-    }
-    [self.tableView reloadData];
     [self setNeedsStatusBarAppearanceUpdate];
 }
 
@@ -112,7 +52,7 @@
 }
 
 - (UIStatusBarStyle)preferredStatusBarStyle {
-    return [self isDarkMode] ? UIStatusBarStyleLightContent : UIStatusBarStyleDarkContent;
+    return DYLikeUserInterfaceStyle() == UIUserInterfaceStyleDark ? UIStatusBarStyleLightContent : UIStatusBarStyleDarkContent;
 }
 
 - (void)dealloc {
@@ -131,8 +71,8 @@
     UIView *header = [[UIView alloc] init];
     UILabel *label = [[UILabel alloc] init];
     label.text = @"二次确认";
-    label.font = [UIFont systemFontOfSize:14];  // DYYY 同款小字体
-    label.textColor = [self amzzSecondaryColor];
+    label.font = [UIFont systemFontOfSize:14];
+    label.textColor = [UIColor secondaryLabelColor];
     label.translatesAutoresizingMaskIntoConstraints = NO;
     [header addSubview:label];
     [NSLayoutConstraint activateConstraints:@[
@@ -213,13 +153,13 @@ void DYLikeOpenSettings(void) {
         if (!top || [top isKindOfClass:DYLikeSettingsViewController.class]) return;
 
         DYLikeSettingsViewController *settings = [DYLikeSettingsViewController new];
-        // 不强制主题，跟随系统深浅色
-        // push 到抖音导航栈：右滑返回可用，返回按钮用系统原生（无自定义，不套玻璃）
+        settings.overrideUserInterfaceStyle = DYLikeUserInterfaceStyle();
         if (top.navigationController) {
             [top.navigationController pushViewController:settings animated:YES];
         } else {
             UINavigationController *navigation = [[UINavigationController alloc] initWithRootViewController:settings];
-            navigation.modalPresentationStyle = UIModalPresentationFullScreen;
+            settings.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc]
+                initWithBarButtonSystemItem:UIBarButtonSystemItemClose target:settings action:@selector(closeSettings)];
             [top presentViewController:navigation animated:YES completion:nil];
         }
     });
