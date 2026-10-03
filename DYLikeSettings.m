@@ -12,10 +12,6 @@
     return [super initWithStyle:UITableViewStyleInsetGrouped];
 }
 
-- (instancetype)init {
-    return [super initWithStyle:UITableViewStyleInsetGrouped];
-}
-
 - (void)viewDidLoad {
     [super viewDidLoad];
     // 隐藏系统导航栏，用插件自己的头部（完全控制，无玻璃）
