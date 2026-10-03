@@ -18,6 +18,10 @@
     self.navigationController.navigationBarHidden = YES;
     self.tableView.backgroundColor = UIColor.systemGroupedBackgroundColor;
     self.tableView.separatorColor = UIColor.separatorColor;
+    // 关掉系统自动安全区适配，避免和手动 contentInset 叠加导致大空隙
+    if (@available(iOS 11.0, *)) {
+        self.tableView.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentNever;
+    }
     self.tableView.rowHeight = UITableViewAutomaticDimension;
     self.tableView.estimatedRowHeight = 58;
     self.tableView.sectionHeaderHeight = UITableViewAutomaticDimension;
