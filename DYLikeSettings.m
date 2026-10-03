@@ -36,6 +36,8 @@
     if (_amzzHeader) return;
     UIView *header = [[UIView alloc] init];
     header.backgroundColor = UIColor.systemGroupedBackgroundColor;
+    // 初始 frame，y 会在 layout 和滚动时修正
+    header.frame = CGRectMake(0, -100, 100, 100);
     [self.tableView addSubview:header];
     _amzzHeader = header;
 
@@ -60,7 +62,7 @@
     [self layoutAmzzHeader];
 }
 
-// 头部布局：只在这里设置 frame，scrollViewDidScroll 只调 y
+// 头部布局：只更新宽高和内部位置，y 由 scrollViewDidScroll 管理
 - (void)layoutAmzzHeader {
     if (!_amzzHeader) return;
     CGFloat statusH = self.view.safeAreaInsets.top;
@@ -71,13 +73,20 @@
     }
     CGFloat headerH = statusH + 44;
     CGFloat w = self.view.bounds.size.width;
-    // 初始位置：y = -headerH（配合 contentInset）
-    _amzzHeader.frame = CGRectMake(self.tableView.contentOffset.x, self.tableView.contentOffset.y, w, headerH);
+    // 只调宽高，不动 y（避免和 scrollViewDidScroll 打架）
+    CGRect f = _amzzHeader.frame;
+    f.size.width = w;
+    f.size.height = headerH;
+    _amzzHeader.frame = f;
     _amzzHeader.backgroundColor = UIColor.systemGroupedBackgroundColor;
     _amzzBackArrow.frame = CGRectMake(14, statusH + 11, 22, 22);
     _amzzTitleLabel.frame = CGRectMake(0, statusH, w, 44);
-    self.tableView.contentInset = UIEdgeInsetsMake(headerH, 0, 0, 0);
-    self.tableView.scrollIndicatorInsets = self.tableView.contentInset;
+    // contentInset 只设一次，避免重复设置导致跳动
+    UIEdgeInsets current = self.tableView.contentInset;
+    if (fabs(current.top - headerH) > 0.5) {
+        self.tableView.contentInset = UIEdgeInsetsMake(headerH, 0, 0, 0);
+        self.tableView.scrollIndicatorInsets = self.tableView.contentInset;
+    }
 }
 
 - (void)viewDidLayoutSubviews {
@@ -106,6 +115,18 @@
     self.navigationController.navigationBarHidden = YES;
     [self updateTheme];
     [self.tableView reloadData];
+}
+
+- (void)viewDidAppear:(BOOL)animated {
+    [super viewDidAppear:animated];
+    // 初始定位头部 y
+    if (_amzzHeader) {
+        CGRect f = _amzzHeader.frame;
+        f.origin.x = self.tableView.contentOffset.x;
+        f.origin.y = self.tableView.contentOffset.y;
+        _amzzHeader.frame = f;
+        [self.tableView bringSubviewToFront:_amzzHeader];
+    }
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
@@ -157,13 +178,18 @@
     [header addSubview:label];
     [NSLayoutConstraint activateConstraints:@[
         [label.leadingAnchor constraintEqualToAnchor:header.leadingAnchor constant:20],
-        [label.bottomAnchor constraintEqualToAnchor:header.bottomAnchor constant:-4]
+        [label.topAnchor constraintEqualToAnchor:header.topAnchor constant:2],
+        [label.bottomAnchor constraintEqualToAnchor:header.bottomAnchor constant:-2]
     ]];
     return header;
 }
 
 - (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section {
-    return 8;
+    return UITableViewAutomaticDimension;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView estimatedHeightForHeaderInSection:(NSInteger)section {
+    return 22;
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
