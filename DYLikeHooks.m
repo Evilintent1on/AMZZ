@@ -413,6 +413,7 @@ static void DYInstallHooks(void) {
     DYInstallFeedButtonHook();
     DYLikeInstallThemeHooks();
     DYLikeInstallSettingsHook();
+    DYLikeInstallMoreHooks();
     if (added) NSLog(@"[DYSecondaryConfirmation] Installed %lu action hooks", (unsigned long)added);
 }
 
@@ -433,32 +434,29 @@ __attribute__((constructor)) static void DYLikeStart(void) {
 }
 
 // ========== 更多功能：文案透明 ==========
-%hook AWEPlayInteractionDescriptionLabel
-- (void)setAlpha:(CGFloat)alpha {
+static IMP dyOrigSetAlpha = NULL;
+static void DYLikeHookedSetAlpha(id self, SEL _cmd, CGFloat alpha) {
     NSString *transparentValue = [[NSUserDefaults standardUserDefaults] objectForKey:DYLikeDescTransparentKey];
+    CGFloat finalAlpha = alpha;
     if (transparentValue && transparentValue.length > 0) {
         CGFloat alphaValue = [transparentValue floatValue];
         if (alphaValue >= 0.0 && alphaValue <= 1.0) {
-            CGFloat finalAlpha = (alphaValue < 0.011) ? 0.011 : alphaValue;
-            %orig(finalAlpha);
+            finalAlpha = (alphaValue < 0.011) ? 0.011 : alphaValue;
         } else {
-            %orig(1.0);
+            finalAlpha = 1.0;
         }
-    } else {
-        %orig(alpha);
     }
+    ((void (*)(id, SEL, CGFloat))dyOrigSetAlpha)(self, _cmd, finalAlpha);
 }
-%end
 
 // ========== 更多功能：禁用长按锁定倍速 ==========
-%hook AWEDSpeedLockSpeedContainer
-- (BOOL)canShowLockSpeed {
+static IMP dyOrigCanShowLockSpeed = NULL;
+static BOOL DYLikeHookedCanShowLockSpeed(id self, SEL _cmd) {
     if (DYLikeBoolForKey(DYLikeDisableLockSpeedKey)) {
         return NO;
     }
-    return %orig;
+    return ((BOOL (*)(id, SEL))dyOrigCanShowLockSpeed)(self, _cmd);
 }
-%end
 
 // ========== 更多功能：推荐直播5秒跳过 ==========
 static NSTimer *dyLikeLiveSkipTimer = nil;
@@ -472,7 +470,8 @@ static void DYLikeCancelLiveSkipTimer(void) {
 
 static BOOL DYLikeAwemeIsRecommendFeed(id aweme) {
     if (![aweme respondsToSelector:@selector(referString)]) return NO;
-    return [[aweme referString] isEqualToString:@"homepage_hot"];
+    NSString *refer = ((NSString * (*)(id, SEL))objc_msgSend)(aweme, @selector(referString));
+    return [refer isEqualToString:@"homepage_hot"];
 }
 
 static BOOL DYLikeAwemeHasLiveSignal(id aweme) {
@@ -480,9 +479,12 @@ static BOOL DYLikeAwemeHasLiveSignal(id aweme) {
         BOOL isLive = ((BOOL (*)(id, SEL))objc_msgSend)(aweme, @selector(isLive));
         if (isLive) return YES;
     }
-    if ([aweme respondsToSelector:@selector(cellRoom)] && [aweme cellRoom] != nil) return YES;
+    if ([aweme respondsToSelector:@selector(cellRoom)]) {
+        id room = ((id (*)(id, SEL))objc_msgSend)(aweme, @selector(cellRoom));
+        if (room != nil) return YES;
+    }
     if ([aweme respondsToSelector:@selector(videoFeedTag)]) {
-        NSString *tag = [aweme videoFeedTag];
+        NSString *tag = ((NSString * (*)(id, SEL))objc_msgSend)(aweme, @selector(videoFeedTag));
         if ([tag isEqualToString:@"直播中"]) return YES;
     }
     return NO;
@@ -507,9 +509,9 @@ static UIViewController *DYLikeFindVCOfClass(Class cls, UIViewController *root) 
     return nil;
 }
 
-%hook AWEFeedContainerViewController
-- (void)aweme:(id)aweme currentIndexWillChange:(NSInteger)index {
-    %orig;
+static IMP dyOrigAwemeIndexWillChange = NULL;
+static void DYLikeHookedAwemeIndexWillChange(id self, SEL _cmd, id aweme, NSInteger index) {
+    ((void (*)(id, SEL, id, NSInteger))dyOrigAwemeIndexWillChange)(self, _cmd, aweme, index);
     DYLikeCancelLiveSkipTimer();
     if (!DYLikeBoolForKey(DYLikeLiveSkipAfter5sKey)) return;
     Class awemeCls = NSClassFromString(@"AWEAwemeModel");
@@ -529,4 +531,24 @@ static UIViewController *DYLikeFindVCOfClass(Class cls, UIViewController *root) 
         }
     }];
 }
-%end
+
+static void DYLikeInstallMoreHooks(void) {
+    // 文案透明
+    Class descCls = NSClassFromString(@"AWEPlayInteractionDescriptionLabel");
+    if (descCls) {
+        Method m = class_getInstanceMethod(descCls, @selector(setAlpha:));
+        if (m) dyOrigSetAlpha = method_setImplementation(m, (IMP)DYLikeHookedSetAlpha);
+    }
+    // 禁用长按锁定倍速
+    Class lockCls = NSClassFromString(@"AWEDSpeedLockSpeedContainer");
+    if (lockCls) {
+        Method m = class_getInstanceMethod(lockCls, @selector(canShowLockSpeed));
+        if (m) dyOrigCanShowLockSpeed = method_setImplementation(m, (IMP)DYLikeHookedCanShowLockSpeed);
+    }
+    // 直播5秒跳过
+    Class feedCls = NSClassFromString(@"AWEFeedContainerViewController");
+    if (feedCls) {
+        Method m = class_getInstanceMethod(feedCls, @selector(aweme:currentIndexWillChange:));
+        if (m) dyOrigAwemeIndexWillChange = method_setImplementation(m, (IMP)DYLikeHookedAwemeIndexWillChange);
+    }
+}
