@@ -4,118 +4,322 @@
 
 @interface DYLikeSettingsViewController ()
 @property (nonatomic, strong) UIVisualEffectView *blurEffectView;
-@property (nonatomic, strong) UIVisualEffectView *vibrancyEffectView;
+@property (nonatomic, strong) UIView *overlayView;
 @end
 
 @implementation DYLikeSettingsViewController
-
-- (void)viewDidLoad {
-    [super viewDidLoad];
-    self.title = @"AMZZ";
-    [self setupAppearance];
-    [self setupBlurEffect];
-    [self setupTableView];
-}
-
-#pragma mark - DYYY UI 移植
-
-- (void)setupAppearance {
-    // DYYY 风格：透明导航栏 + 白色大标题
-    self.navigationController.navigationBar.barTintColor = [UIColor clearColor];
-    self.navigationController.navigationBar.tintColor = [UIColor whiteColor];
-    self.navigationController.navigationBar.largeTitleTextAttributes = @{NSForegroundColorAttributeName : [UIColor whiteColor]};
-    self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeAlways;
-    self.navigationController.navigationBar.prefersLargeTitles = YES;
-}
-
-- (void)setupBlurEffect {
-    // DYYY 风格：深色毛玻璃背景
-    UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
-    self.blurEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
-    self.blurEffectView.frame = self.view.bounds;
-    self.blurEffectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-    [self.view addSubview:self.blurEffectView];
-
-    UIVibrancyEffect *vibrancyEffect = [UIVibrancyEffect effectForBlurEffect:blurEffect];
-    self.vibrancyEffectView = [[UIVisualEffectView alloc] initWithEffect:vibrancyEffect];
-    self.vibrancyEffectView.frame = self.blurEffectView.bounds;
-    self.vibrancyEffectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-    [self.blurEffectView.contentView addSubview:self.vibrancyEffectView];
-
-    UIView *overlayView = [[UIView alloc] initWithFrame:self.view.bounds];
-    overlayView.backgroundColor = [UIColor colorWithWhite:0 alpha:0.3];
-    overlayView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-    [self.view addSubview:overlayView];
-}
-
-- (void)setupTableView {
-    // DYYY 风格：InsetGrouped + 透明背景 + 无分隔线
-    // 注意：initWithStyle 在 init 里已指定，这里只配置
-    self.tableView.backgroundColor = [UIColor clearColor];
-    self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
-    self.tableView.contentInset = UIEdgeInsetsMake(20, 0, 0, 0);
-    if (@available(iOS 15.0, *)) {
-        self.tableView.sectionHeaderTopPadding = 0;
-    }
-}
 
 - (instancetype)init {
     self = [super initWithStyle:UITableViewStyleInsetGrouped];
     return self;
 }
 
-#pragma mark - Table view data source
+- (void)viewDidLoad {
+    [super viewDidLoad];
+
+    self.title = @"AMZZ";
+
+    [self setupAppearance];
+    [self setupBackground];
+    [self setupTableView];
+}
+
+#pragma mark - Appearance
+
+- (void)setupAppearance {
+    UINavigationBar *bar = self.navigationController.navigationBar;
+
+    bar.prefersLargeTitles = YES;
+    self.navigationItem.largeTitleDisplayMode =
+        UINavigationItemLargeTitleDisplayModeAlways;
+
+    bar.tintColor = UIColor.whiteColor;
+
+    bar.largeTitleTextAttributes = @{
+        NSForegroundColorAttributeName : UIColor.whiteColor
+    };
+
+    bar.titleTextAttributes = @{
+        NSForegroundColorAttributeName : UIColor.whiteColor
+    };
+
+    if (@available(iOS 13.0, *)) {
+        UINavigationBarAppearance *appearance =
+            [[UINavigationBarAppearance alloc] init];
+
+        [appearance configureWithTransparentBackground];
+
+        appearance.backgroundColor =
+            [UIColor colorWithWhite:0.05 alpha:0.85];
+
+        appearance.largeTitleTextAttributes = @{
+            NSForegroundColorAttributeName : UIColor.whiteColor
+        };
+
+        appearance.titleTextAttributes = @{
+            NSForegroundColorAttributeName : UIColor.whiteColor
+        };
+
+        bar.standardAppearance = appearance;
+        bar.scrollEdgeAppearance = appearance;
+        bar.compactAppearance = appearance;
+    }
+}
+
+#pragma mark - Background
+
+- (void)setupBackground {
+    UIBlurEffect *blur =
+        [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
+
+    self.blurEffectView =
+        [[UIVisualEffectView alloc] initWithEffect:blur];
+
+    self.blurEffectView.frame = self.view.bounds;
+    self.blurEffectView.autoresizingMask =
+        UIViewAutoresizingFlexibleWidth |
+        UIViewAutoresizingFlexibleHeight;
+
+    [self.view insertSubview:self.blurEffectView atIndex:0];
+
+    self.overlayView =
+        [[UIView alloc] initWithFrame:self.view.bounds];
+
+    self.overlayView.backgroundColor =
+        [UIColor colorWithWhite:0 alpha:0.25];
+
+    self.overlayView.autoresizingMask =
+        UIViewAutoresizingFlexibleWidth |
+        UIViewAutoresizingFlexibleHeight;
+
+    [self.view insertSubview:self.overlayView atIndex:1];
+}
+
+#pragma mark - Table View
+
+- (void)setupTableView {
+    self.tableView.backgroundColor = UIColor.clearColor;
+
+    self.tableView.separatorStyle =
+        UITableViewCellSeparatorStyleNone;
+
+    self.tableView.contentInset =
+        UIEdgeInsetsMake(20, 0, 0, 0);
+
+    if (@available(iOS 15.0, *)) {
+        self.tableView.sectionHeaderTopPadding = 0;
+    }
+
+    self.tableView.showsVerticalScrollIndicator = NO;
+}
+
+#pragma mark - Data Source
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
     return 1;
 }
 
-- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    return 5;
+- (NSInteger)tableView:(UITableView *)tableView
+ numberOfRowsInSection:(NSInteger)section {
+    return DYLikeActionCount;
 }
 
-- (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
+- (NSString *)tableView:(UITableView *)tableView
+ titleForHeaderInSection:(NSInteger)section {
     return @"二次确认";
 }
 
-- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-    static NSString *cellId = @"DYLikeCell";
-    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:cellId];
+- (CGFloat)tableView:(UITableView *)tableView
+ heightForHeaderInSection:(NSInteger)section {
+    return 44.0;
+}
+
+#pragma mark - Header
+
+- (UIView *)tableView:(UITableView *)tableView
+ viewForHeaderInSection:(NSInteger)section {
+
+    UIView *header =
+        [[UIView alloc] initWithFrame:CGRectZero];
+
+    UILabel *label =
+        [[UILabel alloc] initWithFrame:CGRectZero];
+
+    label.text = @"二次确认";
+    label.textColor = UIColor.whiteColor;
+    label.font =
+        [UIFont systemFontOfSize:16
+                           weight:UIFontWeightMedium];
+
+    label.translatesAutoresizingMaskIntoConstraints = NO;
+
+    [header addSubview:label];
+
+    [NSLayoutConstraint activateConstraints:@[
+        [label.leadingAnchor
+            constraintEqualToAnchor:header.leadingAnchor
+                           constant:15],
+
+        [label.trailingAnchor
+            constraintEqualToAnchor:header.trailingAnchor
+                           constant:-15],
+
+        [label.centerYAnchor
+            constraintEqualToAnchor:header.centerYAnchor]
+    ]];
+
+    return header;
+}
+
+#pragma mark - Cells
+
+- (UITableViewCell *)tableView:(UITableView *)tableView
+         cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+
+    static NSString *identifier = @"DYLikeSettingsCell";
+
+    UITableViewCell *cell =
+        [tableView dequeueReusableCellWithIdentifier:identifier];
+
     if (!cell) {
-        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:cellId];
-        // DYYY 风格：cell 透明背景，靠 InsetGrouped 系统卡片
-        cell.backgroundColor = [UIColor clearColor];
+        cell =
+            [[UITableViewCell alloc]
+                initWithStyle:UITableViewCellStyleDefault
+              reuseIdentifier:identifier];
+
+        cell.selectionStyle =
+            UITableViewCellSelectionStyleNone;
+
+        cell.textLabel.font =
+            [UIFont systemFontOfSize:17];
+
+        cell.textLabel.translatesAutoresizingMaskIntoConstraints = NO;
+
+        [cell.textLabel.leadingAnchor
+            constraintEqualToAnchor:cell.contentView.leadingAnchor
+                           constant:16].active = YES;
+
+        [cell.textLabel.centerYAnchor
+            constraintEqualToAnchor:cell.contentView.centerYAnchor].active = YES;
     }
 
-    NSArray *titles = @[@"点赞二次确认", @"关注二次确认", @"收藏二次确认", @"评论点赞二次确认", @"评论点踩二次确认"];
-    NSArray *keys = @[DYLikeLikeEnabledKey, DYLikeFollowEnabledKey, DYLikeFavoriteEnabledKey, DYLikeCommentLikeEnabledKey, DYLikeCommentDislikeEnabledKey];
+    NSArray<NSString *> *titles = @[
+        @"点赞二次确认",
+        @"收藏二次确认",
+        @"关注二次确认",
+        @"评论点赞二次确认",
+        @"评论点踩二次确认"
+    ];
 
-    NSUInteger idx = (NSUInteger)indexPath.row;
-    cell.textLabel.text = titles[idx];
-    cell.textLabel.textColor = [UIColor whiteColor];
-    cell.selectionStyle = UITableViewCellSelectionStyleNone;
+    NSUInteger index = (NSUInteger)indexPath.row;
 
-    UISwitch *sw = [[UISwitch alloc] init];
-    sw.on = [NSUserDefaults.standardUserDefaults boolForKey:keys[idx]];
-    // 默认 YES（首次未设置时）
-    if (![NSUserDefaults.standardUserDefaults objectForKey:keys[idx]]) sw.on = YES;
-    sw.tag = idx;
-    [sw addTarget:self action:@selector(switchChanged:) forControlEvents:UIControlEventValueChanged];
-    cell.accessoryView = sw;
+    cell.textLabel.text = titles[index];
+    cell.textLabel.textColor = UIColor.whiteColor;
+
+    UISwitch *toggle = [[UISwitch alloc] init];
+
+    toggle.on = DYLikeEnabled((DYLikeActionType)index);
+    toggle.tag = (NSInteger)index;
+
+    [toggle addTarget:self
+               action:@selector(toggleChanged:)
+     forControlEvents:UIControlEventValueChanged];
+
+    cell.accessoryView = toggle;
+
+    /*
+     * DYYY 风格的半透明卡片
+     */
+    cell.backgroundColor =
+        [UIColor colorWithWhite:1.0 alpha:0.10];
+
+    cell.backgroundView = nil;
 
     return cell;
 }
 
-- (void)switchChanged:(UISwitch *)sw {
-    NSArray *keys = @[DYLikeLikeEnabledKey, DYLikeFollowEnabledKey, DYLikeFavoriteEnabledKey, DYLikeCommentLikeEnabledKey, DYLikeCommentDislikeEnabledKey];
-    [NSUserDefaults.standardUserDefaults setBool:sw.isOn forKey:keys[sw.tag]];
+#pragma mark - Rounded Cell
+
+- (void)tableView:(UITableView *)tableView
+ willDisplayCell:(UITableViewCell *)cell
+ forRowAtIndexPath:(NSIndexPath *)indexPath {
+
+    /*
+     * 左右留出空间，接近 DYYY 的卡片布局
+     */
+    CGFloat inset = 16.0;
+
+    CGRect frame = cell.frame;
+    frame.origin.x = inset;
+    frame.size.width -= inset * 2.0;
+    cell.frame = frame;
+
+    NSInteger rows =
+        [tableView numberOfRowsInSection:indexPath.section];
+
+    if (rows > 1 && indexPath.row == rows - 1) {
+
+        cell.layer.cornerRadius = 10.0;
+        cell.layer.masksToBounds = YES;
+
+        cell.layer.maskedCorners =
+            kCALayerMinXMaxYCorner |
+            kCALayerMaxXMaxYCorner;
+
+    } else {
+        cell.layer.cornerRadius = 0.0;
+        cell.layer.masksToBounds = NO;
+    }
 }
 
-- (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
+#pragma mark - Switch
+
+- (void)toggleChanged:(UISwitch *)toggle {
+
+    if (toggle.tag < 0 ||
+        toggle.tag >= DYLikeActionCount) {
+        return;
+    }
+
+    NSArray<NSString *> *keys = @[
+        DYLikeLikeEnabledKey,
+        DYLikeFavoriteEnabledKey,
+        DYLikeFollowEnabledKey,
+        DYLikeCommentLikeEnabledKey,
+        DYLikeCommentDislikeEnabledKey
+    ];
+
+    NSString *key =
+        keys[(NSUInteger)toggle.tag];
+
+    [[NSUserDefaults standardUserDefaults]
+        setBool:toggle.isOn
+        forKey:key];
+
+    [[NSUserDefaults standardUserDefaults] synchronize];
+}
+
+#pragma mark - Footer
+
+- (NSString *)tableView:(UITableView *)tableView
+ titleForFooterInSection:(NSInteger)section {
+
     return @"开启后，抖音对应操作会先显示确认弹窗。";
 }
 
+#pragma mark - Status Bar
+
+- (UIStatusBarStyle)preferredStatusBarStyle {
+    return UIStatusBarStyleLightContent;
+}
+
 @end
+
+    }
+}
+
+@end
+
 static UIViewController *DYLikeTop(UIViewController *controller) {
     if (controller.presentedViewController && !controller.presentedViewController.isBeingDismissed) {
         return DYLikeTop(controller.presentedViewController);
