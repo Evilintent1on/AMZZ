@@ -27,36 +27,7 @@
 #pragma mark - Appearance
 
 - (void)setupAppearance {
-    UINavigationBar *bar = self.navigationController.navigationBar;
-
-    // 常规标题栏（非大标题），跟截图的 DYYY 一样
-    bar.prefersLargeTitles = NO;
-    self.navigationItem.largeTitleDisplayMode =
-        UINavigationItemLargeTitleDisplayModeNever;
-
-    bar.tintColor = UIColor.whiteColor;
-
-    bar.titleTextAttributes = @{
-        NSForegroundColorAttributeName : UIColor.whiteColor
-    };
-
-    if (@available(iOS 13.0, *)) {
-        UINavigationBarAppearance *appearance =
-            [[UINavigationBarAppearance alloc] init];
-
-        [appearance configureWithTransparentBackground];
-
-        appearance.backgroundColor =
-            [UIColor colorWithWhite:0.05 alpha:0.85];
-
-        appearance.titleTextAttributes = @{
-            NSForegroundColorAttributeName : UIColor.whiteColor
-        };
-
-        bar.standardAppearance = appearance;
-        bar.scrollEdgeAppearance = appearance;
-        bar.compactAppearance = appearance;
-    }
+    // 用系统默认导航栏，不做自定义，避免显示异常
 }
 
 #pragma mark - Background
