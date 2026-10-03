@@ -12,20 +12,9 @@
     [super viewDidLoad];
     self.title = @"AMZZ";
     self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
-    // 返回按钮：UIImageView + 点击手势，不用 UIButton，iOS 26 无法套玻璃
+    // 不用 leftBarButtonItem（iOS 26 会给整个容器套玻璃），直接把箭头贴到导航栏上
     self.navigationItem.hidesBackButton = YES;
-    UIImageView *backImageView = [[UIImageView alloc] initWithImage:
-        [[UIImage systemImageNamed:@"chevron.left"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate]];
-    backImageView.tintColor = UIColor.labelColor;
-    backImageView.contentMode = UIViewContentModeScaleAspectFit;
-    backImageView.frame = CGRectMake(0, 0, 28, 28);
-    backImageView.userInteractionEnabled = YES;
-    [backImageView addGestureRecognizer:[[UITapGestureRecognizer alloc]
-        initWithTarget:self action:@selector(amzzGoBackTap:)]];
-    UIView *backContainer = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 32, 32)];
-    backImageView.center = backContainer.center;
-    [backContainer addSubview:backImageView];
-    self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithCustomView:backContainer];
+    self.navigationItem.leftBarButtonItem = nil;
     self.tableView.backgroundColor = UIColor.systemGroupedBackgroundColor;
     self.tableView.separatorColor = UIColor.separatorColor;
     self.tableView.rowHeight = UITableViewAutomaticDimension;
@@ -42,6 +31,42 @@
 
 - (void)amzzGoBackTap:(UITapGestureRecognizer *)gesture {
     [self.navigationController popViewControllerAnimated:YES];
+}
+
+// 把无玻璃箭头直接贴到导航栏上（绕开 BarButtonItem 的玻璃容器）
+- (void)amzzAttachBackArrow {
+    UINavigationBar *navBar = self.navigationController.navigationBar;
+    if (!navBar) return;
+    UIView *existing = [navBar viewWithTag:9999];
+    [existing removeFromSuperview];
+    UIImageView *arrow = [[UIImageView alloc] initWithImage:
+        [[UIImage systemImageNamed:@"chevron.left"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate]];
+    arrow.tag = 9999;
+    arrow.tintColor = UIColor.labelColor;
+    arrow.contentMode = UIViewContentModeScaleAspectFit;
+    arrow.userInteractionEnabled = YES;
+    [arrow addGestureRecognizer:[[UITapGestureRecognizer alloc]
+        initWithTarget:self action:@selector(amzzGoBackTap:)]];
+    arrow.translatesAutoresizingMaskIntoConstraints = NO;
+    [navBar addSubview:arrow];
+    [NSLayoutConstraint activateConstraints:@[
+        [arrow.leadingAnchor constraintEqualToAnchor:navBar.leadingAnchor constant:16],
+        [arrow.centerYAnchor constraintEqualToAnchor:navBar.centerYAnchor constant:4],
+        [arrow.widthAnchor constraintEqualToConstant:24],
+        [arrow.heightAnchor constraintEqualToConstant:24]
+    ]];
+}
+
+- (void)viewDidAppear:(BOOL)animated {
+    [super viewDidAppear:animated];
+    [self amzzAttachBackArrow];
+}
+
+- (void)viewWillDisappear:(BOOL)animated {
+    [super viewWillDisappear:animated];
+    // 离开时移除，避免污染抖音其他页面的导航栏
+    UIView *existing = [self.navigationController.navigationBar viewWithTag:9999];
+    [existing removeFromSuperview];
 }
 
 - (void)viewWillAppear:(BOOL)animated {
