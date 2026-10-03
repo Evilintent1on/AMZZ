@@ -2,11 +2,7 @@
 #import "../Core/DYLikeCore.h"
 #import <objc/runtime.h>
 
-@implementation DYLikeSettingsViewController {
-    UIView *_customHeader;
-    UIButton *_customBackBtn;
-    UILabel *_customTitleLabel;
-}
+@implementation DYLikeSettingsViewController
 
 - (instancetype)init {
     return [super initWithStyle:UITableViewStyleInsetGrouped];
@@ -38,8 +34,18 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    // 隐藏系统导航栏，用 DYYY 风格自定义头部（无液态玻璃）
-    self.navigationController.navigationBarHidden = YES;
+    self.title = @"AMZZ";
+    self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
+    // 隐藏系统返回按钮，用自定义纯箭头（UIButtonTypeCustom 无玻璃效果）
+    self.navigationItem.hidesBackButton = YES;
+    UIButton *backBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+    UIImage *chevron = [[UIImage systemImageNamed:@"chevron.left"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+    [backBtn setImage:chevron forState:UIControlStateNormal];
+    backBtn.tintColor = [self amzzForegroundColor];
+    backBtn.frame = CGRectMake(0, 0, 32, 32);
+    [backBtn addTarget:self action:@selector(customGoBack) forControlEvents:UIControlEventTouchUpInside];
+    self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithCustomView:backBtn];
+
     self.tableView.backgroundColor = [self amzzBackgroundColor];
     self.tableView.separatorColor = [self isDarkMode] ? [UIColor colorWithWhite:1.0 alpha:0.08] : [UIColor colorWithWhite:0.0 alpha:0.08];
     self.tableView.rowHeight = 52;
@@ -47,9 +53,7 @@
     self.tableView.sectionHeaderHeight = UITableViewAutomaticDimension;
     self.tableView.sectionFooterHeight = UITableViewAutomaticDimension;
     self.tableView.showsVerticalScrollIndicator = NO;
-    // DYYY 风格自定义头部：纯箭头返回 + AMZZ 标题
-    [self setupCustomHeader];
-    // 右滑返回手势（左边缘滑动 pop）
+    // 右滑返回手势（左边缘滑动 pop，push 时系统自带，这里加固）
     UIScreenEdgePanGestureRecognizer *edgePan = [[UIScreenEdgePanGestureRecognizer alloc]
         initWithTarget:self action:@selector(handleEdgePan:)];
     edgePan.edges = UIRectEdgeLeft;
@@ -59,72 +63,6 @@
     [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(updateTheme)
         name:UIApplicationDidBecomeActiveNotification object:nil];
     [self updateTheme];
-}
-
-// 安全区确定后重新布局头部（解决太靠上问题）
-- (void)viewDidLayoutSubviews {
-    [super viewDidLayoutSubviews];
-    [self layoutCustomHeader];
-}
-
-// DYYY 风格自定义头部（frame 布局，避免 AutoLayout 在 tableView 上错乱）
-- (void)setupCustomHeader {
-    UIView *header = [[UIView alloc] init];
-    header.backgroundColor = [self amzzBackgroundColor];
-    header.tag = 999;
-    [self.view addSubview:header];
-    _customHeader = header;
-
-    // 返回按钮：纯 chevron，无玻璃底
-    UIButton *backBtn = [UIButton buttonWithType:UIButtonTypeCustom];
-    UIImage *chevron = [[UIImage systemImageNamed:@"chevron.left"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
-    [backBtn setImage:chevron forState:UIControlStateNormal];
-    backBtn.tintColor = [self amzzForegroundColor];
-    [backBtn addTarget:self action:@selector(customGoBack) forControlEvents:UIControlEventTouchUpInside];
-    [header addSubview:backBtn];
-    _customBackBtn = backBtn;
-
-    // AMZZ 标题居中
-    UILabel *titleLabel = [[UILabel alloc] init];
-    titleLabel.text = @"AMZZ";
-    titleLabel.font = [UIFont boldSystemFontOfSize:17];
-    titleLabel.textColor = [self amzzForegroundColor];
-    titleLabel.textAlignment = NSTextAlignmentCenter;
-    [header addSubview:titleLabel];
-    _customTitleLabel = titleLabel;
-
-    [self layoutCustomHeader];
-    // 确保头部在最上层且可点击
-    [self.view bringSubviewToFront:header];
-}
-
-// 用准确的安全区布局头部（viewDidLayoutSubviews 时调用）
-- (void)layoutCustomHeader {
-    if (!_customHeader) return;
-    CGFloat statusH = self.view.safeAreaInsets.top;
-    if (statusH < 20) {
-        // 兜底：用 window 的安全区
-        UIWindow *win = self.view.window;
-        if (win) statusH = win.safeAreaInsets.top;
-        if (statusH < 20) statusH = 59; // 灵动岛机型
-    }
-    CGFloat headerH = statusH + 44;
-    CGFloat w = self.view.bounds.size.width;
-
-    _customHeader.frame = CGRectMake(0, 0, w, headerH);
-    _customHeader.backgroundColor = [self amzzBackgroundColor];
-
-    // 返回按钮放在导航栏区域垂直居中（参考 Yuki 截图位置）
-    _customBackBtn.frame = CGRectMake(8, statusH + 2, 40, 40);
-    _customBackBtn.tintColor = [self amzzForegroundColor];
-
-    // 标题在导航栏区域居中
-    _customTitleLabel.frame = CGRectMake(0, statusH, w, 44);
-    _customTitleLabel.textColor = [self amzzForegroundColor];
-
-    // tableView 顶部留出头部位置
-    self.tableView.contentInset = UIEdgeInsetsMake(headerH, 0, 0, 0);
-    self.tableView.scrollIndicatorInsets = self.tableView.contentInset;
 }
 
 - (void)customGoBack {
@@ -137,21 +75,10 @@
     }
 }
 
-// 头部固定在顶部不随滚动
-- (void)scrollViewDidScroll:(UIScrollView *)scrollView {
-    UIView *header = [self.view viewWithTag:999];
-    if (header) {
-        CGRect f = header.frame;
-        f.origin.y = scrollView.contentOffset.y;
-        header.frame = f;
-        [self.view bringSubviewToFront:header];
-    }
-}
-
 - (void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
-    // 隐藏系统导航栏（用自定义头部）
-    self.navigationController.navigationBarHidden = YES;
+    // 显示系统导航栏
+    self.navigationController.navigationBarHidden = NO;
     [self updateTheme];
     [self.tableView reloadData];
 }
@@ -162,7 +89,19 @@
     // 刷新自适应颜色
     self.tableView.backgroundColor = [self amzzBackgroundColor];
     self.tableView.separatorColor = [self isDarkMode] ? [UIColor colorWithWhite:1.0 alpha:0.08] : [UIColor colorWithWhite:0.0 alpha:0.08];
-    [self layoutCustomHeader];
+    // 导航栏自适应
+    UINavigationBarAppearance *appearance = [UINavigationBarAppearance new];
+    [appearance configureWithOpaqueBackground];
+    appearance.backgroundColor = [self amzzBackgroundColor];
+    appearance.titleTextAttributes = @{NSForegroundColorAttributeName: [self amzzForegroundColor]};
+    appearance.shadowColor = [UIColor clearColor];
+    self.navigationItem.standardAppearance = appearance;
+    self.navigationItem.scrollEdgeAppearance = appearance;
+    self.navigationItem.compactAppearance = appearance;
+    // 更新返回按钮颜色
+    if ([self.navigationItem.leftBarButtonItem.customView isKindOfClass:UIButton.class]) {
+        ((UIButton *)self.navigationItem.leftBarButtonItem.customView).tintColor = [self amzzForegroundColor];
+    }
     [self.tableView reloadData];
     [self setNeedsStatusBarAppearanceUpdate];
 }
