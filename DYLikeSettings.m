@@ -462,12 +462,10 @@ void DYLikeOpenSettings(void) {
         UIViewController *top = DYLikeTop(window.rootViewController);
         if (!top || [top isKindOfClass:DYLikeSettingsViewController.class]) return;
         DYLikeSettingsViewController *vc = [DYLikeSettingsViewController new];
-        if (top.navigationController) {
-            [top.navigationController pushViewController:vc animated:YES];
-        } else {
-            UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:vc];
-            [top presentViewController:nav animated:YES completion:nil];
-        }
+        // 独立呈现，不 push 进抖音导航栈，避免透明叠加
+        UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:vc];
+        nav.modalPresentationStyle = UIModalPresentationFullScreen;
+        [top presentViewController:nav animated:YES completion:nil];
     });
 }
 
