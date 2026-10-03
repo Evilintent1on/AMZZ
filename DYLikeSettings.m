@@ -33,6 +33,9 @@
     [super viewWillAppear:animated];
     // 确保导航栏显示（AMZZ 标题）
     self.navigationController.navigationBarHidden = NO;
+    // 隐藏返回按钮（顶部只保留 AMZZ）
+    self.navigationItem.hidesBackButton = YES;
+    self.navigationItem.leftBarButtonItem = nil;
     [self updateTheme];
     [self.tableView reloadData];
 }
@@ -163,8 +166,7 @@ void DYLikeOpenSettings(void) {
             [top.navigationController pushViewController:settings animated:YES];
         } else {
             UINavigationController *navigation = [[UINavigationController alloc] initWithRootViewController:settings];
-            settings.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc]
-                initWithBarButtonSystemItem:UIBarButtonSystemItemClose target:settings action:@selector(closeSettings)];
+            // 无返回按钮，顶部只保留 AMZZ
             [top presentViewController:navigation animated:YES completion:nil];
         }
     });
