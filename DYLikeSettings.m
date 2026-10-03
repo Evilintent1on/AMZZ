@@ -2,18 +2,46 @@
 #import "../Core/DYLikeCore.h"
 #import <objc/runtime.h>
 
-@implementation DYLikeSettingsViewController
+@implementation DYLikeSettingsViewController {
+    UIView *_customHeader;
+    UIButton *_customBackBtn;
+    UILabel *_customTitleLabel;
+}
 
 - (instancetype)init {
     return [super initWithStyle:UITableViewStyleInsetGrouped];
+}
+
+// 是否深色模式
+- (BOOL)isDarkMode {
+    return self.traitCollection.userInterfaceStyle == UIUserInterfaceStyleDark;
+}
+
+// 自适应背景色（深：0.08 / 浅：Yuki 同款浅灰）
+- (UIColor *)amzzBackgroundColor {
+    if ([self isDarkMode]) {
+        return [UIColor colorWithRed:0.08 green:0.08 blue:0.10 alpha:1.0];
+    } else {
+        return [UIColor colorWithRed:0.95 green:0.95 blue:0.97 alpha:1.0];
+    }
+}
+
+// 自适应前景色（深：白 / 浅：黑）
+- (UIColor *)amzzForegroundColor {
+    return [self isDarkMode] ? [UIColor whiteColor] : [UIColor blackColor];
+}
+
+// 自适应次要文字色
+- (UIColor *)amzzSecondaryColor {
+    return [self isDarkMode] ? [UIColor colorWithWhite:1.0 alpha:0.5] : [UIColor colorWithWhite:0.0 alpha:0.5];
 }
 
 - (void)viewDidLoad {
     [super viewDidLoad];
     // 隐藏系统导航栏，用 DYYY 风格自定义头部（无液态玻璃）
     self.navigationController.navigationBarHidden = YES;
-    self.tableView.backgroundColor = [UIColor colorWithRed:0.08 green:0.08 blue:0.10 alpha:1.0];
-    self.tableView.separatorColor = [UIColor colorWithWhite:1.0 alpha:0.08];
+    self.tableView.backgroundColor = [self amzzBackgroundColor];
+    self.tableView.separatorColor = [self isDarkMode] ? [UIColor colorWithWhite:1.0 alpha:0.08] : [UIColor colorWithWhite:0.0 alpha:0.08];
     self.tableView.rowHeight = 52;
     self.tableView.estimatedRowHeight = 52;
     self.tableView.sectionHeaderHeight = UITableViewAutomaticDimension;
@@ -33,42 +61,70 @@
     [self updateTheme];
 }
 
+// 安全区确定后重新布局头部（解决太靠上问题）
+- (void)viewDidLayoutSubviews {
+    [super viewDidLayoutSubviews];
+    [self layoutCustomHeader];
+}
+
 // DYYY 风格自定义头部（frame 布局，避免 AutoLayout 在 tableView 上错乱）
 - (void)setupCustomHeader {
-    CGFloat statusH = self.view.safeAreaInsets.top;
-    if (statusH < 20) statusH = 47; // 兜底
-    CGFloat headerH = statusH + 44;
-
-    UIView *header = [[UIView alloc] initWithFrame:CGRectMake(0, 0, self.view.bounds.size.width, headerH)];
-    header.backgroundColor = [UIColor colorWithRed:0.08 green:0.08 blue:0.10 alpha:1.0];
-    header.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleBottomMargin;
+    UIView *header = [[UIView alloc] init];
+    header.backgroundColor = [self amzzBackgroundColor];
     header.tag = 999;
     [self.view addSubview:header];
+    _customHeader = header;
 
     // 返回按钮：纯 chevron，无玻璃底
     UIButton *backBtn = [UIButton buttonWithType:UIButtonTypeCustom];
     UIImage *chevron = [[UIImage systemImageNamed:@"chevron.left"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
     [backBtn setImage:chevron forState:UIControlStateNormal];
-    backBtn.tintColor = [UIColor whiteColor];
-    backBtn.frame = CGRectMake(8, headerH - 42, 40, 40);
-    backBtn.autoresizingMask = UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleRightMargin;
+    backBtn.tintColor = [self amzzForegroundColor];
     [backBtn addTarget:self action:@selector(customGoBack) forControlEvents:UIControlEventTouchUpInside];
     [header addSubview:backBtn];
+    _customBackBtn = backBtn;
 
     // AMZZ 标题居中
-    UILabel *titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, headerH - 44, header.bounds.size.width, 44)];
+    UILabel *titleLabel = [[UILabel alloc] init];
     titleLabel.text = @"AMZZ";
     titleLabel.font = [UIFont boldSystemFontOfSize:17];
-    titleLabel.textColor = [UIColor whiteColor];
+    titleLabel.textColor = [self amzzForegroundColor];
     titleLabel.textAlignment = NSTextAlignmentCenter;
-    titleLabel.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleTopMargin;
     [header addSubview:titleLabel];
+    _customTitleLabel = titleLabel;
+
+    [self layoutCustomHeader];
+    // 确保头部在最上层且可点击
+    [self.view bringSubviewToFront:header];
+}
+
+// 用准确的安全区布局头部（viewDidLayoutSubviews 时调用）
+- (void)layoutCustomHeader {
+    if (!_customHeader) return;
+    CGFloat statusH = self.view.safeAreaInsets.top;
+    if (statusH < 20) {
+        // 兜底：用 window 的安全区
+        UIWindow *win = self.view.window;
+        if (win) statusH = win.safeAreaInsets.top;
+        if (statusH < 20) statusH = 59; // 灵动岛机型
+    }
+    CGFloat headerH = statusH + 44;
+    CGFloat w = self.view.bounds.size.width;
+
+    _customHeader.frame = CGRectMake(0, 0, w, headerH);
+    _customHeader.backgroundColor = [self amzzBackgroundColor];
+
+    // 返回按钮放在导航栏区域垂直居中（参考 Yuki 截图位置）
+    _customBackBtn.frame = CGRectMake(8, statusH + 2, 40, 40);
+    _customBackBtn.tintColor = [self amzzForegroundColor];
+
+    // 标题在导航栏区域居中
+    _customTitleLabel.frame = CGRectMake(0, statusH, w, 44);
+    _customTitleLabel.textColor = [self amzzForegroundColor];
 
     // tableView 顶部留出头部位置
     self.tableView.contentInset = UIEdgeInsetsMake(headerH, 0, 0, 0);
     self.tableView.scrollIndicatorInsets = self.tableView.contentInset;
-    // 确保头部在最上层且可点击
-    [self.view bringSubviewToFront:header];
 }
 
 - (void)customGoBack {
@@ -101,8 +157,13 @@
 }
 
 - (void)updateTheme {
-    UIUserInterfaceStyle style = DYLikeUserInterfaceStyle();
-    if (self.overrideUserInterfaceStyle != style) self.overrideUserInterfaceStyle = style;
+    // 不强制覆盖，跟随系统深浅色
+    self.overrideUserInterfaceStyle = UIUserInterfaceStyleUnspecified;
+    // 刷新自适应颜色
+    self.tableView.backgroundColor = [self amzzBackgroundColor];
+    self.tableView.separatorColor = [self isDarkMode] ? [UIColor colorWithWhite:1.0 alpha:0.08] : [UIColor colorWithWhite:0.0 alpha:0.08];
+    [self layoutCustomHeader];
+    [self.tableView reloadData];
     [self setNeedsStatusBarAppearanceUpdate];
 }
 
@@ -112,7 +173,7 @@
 }
 
 - (UIStatusBarStyle)preferredStatusBarStyle {
-    return UIStatusBarStyleLightContent;
+    return [self isDarkMode] ? UIStatusBarStyleLightContent : UIStatusBarStyleDarkContent;
 }
 
 - (void)dealloc {
@@ -132,7 +193,7 @@
     UILabel *label = [[UILabel alloc] init];
     label.text = @"二次确认";
     label.font = [UIFont systemFontOfSize:14];  // DYYY 同款小字体
-    label.textColor = [UIColor colorWithWhite:1.0 alpha:0.5];
+    label.textColor = [self amzzSecondaryColor];
     label.translatesAutoresizingMaskIntoConstraints = NO;
     [header addSubview:label];
     [NSLayoutConstraint activateConstraints:@[
@@ -213,7 +274,7 @@ void DYLikeOpenSettings(void) {
         if (!top || [top isKindOfClass:DYLikeSettingsViewController.class]) return;
 
         DYLikeSettingsViewController *settings = [DYLikeSettingsViewController new];
-        settings.overrideUserInterfaceStyle = DYLikeUserInterfaceStyle();
+        // 不强制主题，跟随系统深浅色
         // push 到抖音导航栈：右滑返回可用，返回按钮用系统原生（无自定义，不套玻璃）
         if (top.navigationController) {
             [top.navigationController pushViewController:settings animated:YES];
