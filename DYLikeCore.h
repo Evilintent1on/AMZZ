@@ -23,10 +23,14 @@ FOUNDATION_EXPORT NSString *const DYLikeFavoriteEnabledKey;
 FOUNDATION_EXPORT NSString *const DYLikeFollowEnabledKey;
 FOUNDATION_EXPORT NSString *const DYLikeCommentLikeEnabledKey;
 FOUNDATION_EXPORT NSString *const DYLikeCommentDislikeEnabledKey;
+FOUNDATION_EXPORT NSString *const DYLikeLiveSkipAfter5sKey;
+FOUNDATION_EXPORT NSString *const DYLikeDisableLockSpeedKey;
+FOUNDATION_EXPORT NSString *const DYLikeDescTransparentKey;
 FOUNDATION_EXPORT NSNotificationName const DYLikeThemeDidChangeNotification;
 
 FOUNDATION_EXPORT void DYLikeEnsureDefaults(void);
 FOUNDATION_EXPORT BOOL DYLikeEnabled(DYLikeActionType action);
+FOUNDATION_EXPORT BOOL DYLikeBoolForKey(NSString *key);
 FOUNDATION_EXPORT BOOL DYLikeIsReplaying(DYLikeActionType action);
 FOUNDATION_EXPORT id DYLikeRead(id object, NSString *key);
 FOUNDATION_EXPORT UIWindow *DYLikeActiveWindow(void);

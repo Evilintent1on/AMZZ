@@ -16,6 +16,9 @@ NSString *const DYLikeFavoriteEnabledKey = @"DYLikeConfirmFavorite";
 NSString *const DYLikeFollowEnabledKey = @"DYLikeConfirmFollow";
 NSString *const DYLikeCommentLikeEnabledKey = @"DYLikeConfirmCommentLike";
 NSString *const DYLikeCommentDislikeEnabledKey = @"DYLikeConfirmCommentDislike";
+NSString *const DYLikeLiveSkipAfter5sKey = @"DYLikeLiveSkipAfter5s";
+NSString *const DYLikeDisableLockSpeedKey = @"DYLikeDisableLockSpeedGesture";
+NSString *const DYLikeDescTransparentKey = @"DYLikeDescTransparent";
 NSNotificationName const DYLikeThemeDidChangeNotification = @"DYLikeThemeDidChange";
 
 static __thread NSUInteger DYLikeReplayDepth[DYLikeActionCount];
@@ -24,7 +27,8 @@ static __thread DYLikeIntent DYLikeReplayIntent[DYLikeActionCount];
 void DYLikeEnsureDefaults(void) {
     [NSUserDefaults.standardUserDefaults registerDefaults:@{
         DYLikeLikeEnabledKey: @NO, DYLikeFavoriteEnabledKey: @NO, DYLikeFollowEnabledKey: @NO,
-        DYLikeCommentLikeEnabledKey: @NO, DYLikeCommentDislikeEnabledKey: @NO
+        DYLikeCommentLikeEnabledKey: @NO, DYLikeCommentDislikeEnabledKey: @NO,
+        DYLikeLiveSkipAfter5sKey: @NO, DYLikeDisableLockSpeedKey: @NO
     }];
 }
 
@@ -38,6 +42,10 @@ BOOL DYLikeEnabled(DYLikeActionType action) {
         case DYLikeActionCommentDislike: key = DYLikeCommentDislikeEnabledKey; break;
         default: return NO;
     }
+    return [NSUserDefaults.standardUserDefaults boolForKey:key];
+}
+
+BOOL DYLikeBoolForKey(NSString *key) {
     return [NSUserDefaults.standardUserDefaults boolForKey:key];
 }
 

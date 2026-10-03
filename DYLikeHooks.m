@@ -431,3 +431,102 @@ __attribute__((constructor)) static void DYLikeStart(void) {
         _dyld_register_func_for_add_image(DYImageLoaded);
     }
 }
+
+// ========== 更多功能：文案透明 ==========
+%hook AWEPlayInteractionDescriptionLabel
+- (void)setAlpha:(CGFloat)alpha {
+    NSString *transparentValue = [[NSUserDefaults standardUserDefaults] objectForKey:DYLikeDescTransparentKey];
+    if (transparentValue && transparentValue.length > 0) {
+        CGFloat alphaValue = [transparentValue floatValue];
+        if (alphaValue >= 0.0 && alphaValue <= 1.0) {
+            CGFloat finalAlpha = (alphaValue < 0.011) ? 0.011 : alphaValue;
+            %orig(finalAlpha);
+        } else {
+            %orig(1.0);
+        }
+    } else {
+        %orig(alpha);
+    }
+}
+%end
+
+// ========== 更多功能：禁用长按锁定倍速 ==========
+%hook AWEDSpeedLockSpeedContainer
+- (BOOL)canShowLockSpeed {
+    if (DYLikeBoolForKey(DYLikeDisableLockSpeedKey)) {
+        return NO;
+    }
+    return %orig;
+}
+%end
+
+// ========== 更多功能：推荐直播5秒跳过 ==========
+static NSTimer *dyLikeLiveSkipTimer = nil;
+
+static void DYLikeCancelLiveSkipTimer(void) {
+    if (dyLikeLiveSkipTimer) {
+        [dyLikeLiveSkipTimer invalidate];
+        dyLikeLiveSkipTimer = nil;
+    }
+}
+
+static BOOL DYLikeAwemeIsRecommendFeed(id aweme) {
+    if (![aweme respondsToSelector:@selector(referString)]) return NO;
+    return [[aweme referString] isEqualToString:@"homepage_hot"];
+}
+
+static BOOL DYLikeAwemeHasLiveSignal(id aweme) {
+    if ([aweme respondsToSelector:@selector(isLive)]) {
+        BOOL isLive = ((BOOL (*)(id, SEL))objc_msgSend)(aweme, @selector(isLive));
+        if (isLive) return YES;
+    }
+    if ([aweme respondsToSelector:@selector(cellRoom)] && [aweme cellRoom] != nil) return YES;
+    if ([aweme respondsToSelector:@selector(videoFeedTag)]) {
+        NSString *tag = [aweme videoFeedTag];
+        if ([tag isEqualToString:@"直播中"]) return YES;
+    }
+    return NO;
+}
+
+static UIViewController *DYLikeFindVCOfClass(Class cls, UIViewController *root) {
+    if (!root) return nil;
+    if ([root isKindOfClass:cls]) return root;
+    for (UIViewController *child in root.childViewControllers) {
+        UIViewController *found = DYLikeFindVCOfClass(cls, child);
+        if (found) return found;
+    }
+    if ([root isKindOfClass:[UINavigationController class]]) {
+        for (UIViewController *vc in [(UINavigationController *)root viewControllers]) {
+            UIViewController *found = DYLikeFindVCOfClass(cls, vc);
+            if (found) return found;
+        }
+    }
+    if (root.presentedViewController) {
+        return DYLikeFindVCOfClass(cls, root.presentedViewController);
+    }
+    return nil;
+}
+
+%hook AWEFeedContainerViewController
+- (void)aweme:(id)aweme currentIndexWillChange:(NSInteger)index {
+    %orig;
+    DYLikeCancelLiveSkipTimer();
+    if (!DYLikeBoolForKey(DYLikeLiveSkipAfter5sKey)) return;
+    Class awemeCls = NSClassFromString(@"AWEAwemeModel");
+    if (!awemeCls || ![aweme isKindOfClass:awemeCls]) return;
+    if (!DYLikeAwemeIsRecommendFeed(aweme)) return;
+    if (!DYLikeAwemeHasLiveSignal(aweme)) return;
+    NSInteger nextIndex = index + 1;
+    dyLikeLiveSkipTimer = [NSTimer scheduledTimerWithTimeInterval:5.0 repeats:NO block:^(__unused NSTimer *timer) {
+        dyLikeLiveSkipTimer = nil;
+        UIWindow *window = DYLikeActiveWindow();
+        if (!window) return;
+        Class feedCls = NSClassFromString(@"AWEFeedTableViewController");
+        if (!feedCls) return;
+        UIViewController *feedVC = DYLikeFindVCOfClass(feedCls, window.rootViewController);
+        if (feedVC && [feedVC respondsToSelector:@selector(setCurrentPlayIndex:)]) {
+            ((void (*)(id, SEL, NSInteger))objc_msgSend)(feedVC, @selector(setCurrentPlayIndex:), nextIndex);
+        }
+    }];
+}
+%end
