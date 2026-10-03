@@ -1,122 +1,63 @@
 #import "DYLikeSettings.h"
-#import "DYLikeCore.h"
+#import "../Core/DYLikeCore.h"
 #import <objc/runtime.h>
-
-@interface DYLikeSettingsViewController () <UITableViewDataSource, UITableViewDelegate>
-@end
 
 @implementation DYLikeSettingsViewController
 
 - (instancetype)init {
-    self = [super initWithStyle:UITableViewStyleGrouped];
-    return self;
+    return [super initWithStyle:UITableViewStyleInsetGrouped];
 }
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-
-    // 全屏黑色背景
-    self.view.backgroundColor = [UIColor colorWithRed:0.08 green:0.08 blue:0.10 alpha:1.0];
-
-    // 隐藏系统导航栏，使用自定义 Header
-    self.navigationController.navigationBarHidden = YES;
-
-    [self setupHeaderView];
-    [self setupTableView];
-
+    self.title = @"AMZZ";
+    self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
+    self.tableView.backgroundColor = UIColor.systemGroupedBackgroundColor;
+    self.tableView.separatorColor = UIColor.separatorColor;
+    self.tableView.rowHeight = UITableViewAutomaticDimension;
+    self.tableView.estimatedRowHeight = 58;
+    self.tableView.sectionHeaderHeight = UITableViewAutomaticDimension;
+    self.tableView.sectionFooterHeight = UITableViewAutomaticDimension;
+    self.tableView.showsVerticalScrollIndicator = NO;
     [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(updateTheme)
         name:DYLikeThemeDidChangeNotification object:nil];
     [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(updateTheme)
         name:UIApplicationDidBecomeActiveNotification object:nil];
+    [self updateTheme];
 }
 
 - (void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
-    self.navigationController.navigationBarHidden = YES;
+    [self updateTheme];
     [self.tableView reloadData];
-}
-
-- (void)setupHeaderView {
-    UIView *headerView = [UIView new];
-    headerView.translatesAutoresizingMaskIntoConstraints = NO;
-    headerView.backgroundColor = [UIColor colorWithRed:0.08 green:0.08 blue:0.10 alpha:1.0];
-    [self.view addSubview:headerView];
-
-    UIButton *backButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    backButton.translatesAutoresizingMaskIntoConstraints = NO;
-    UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:18 weight:UIImageSymbolWeightMedium];
-    UIImage *backIcon = [UIImage systemImageNamed:@"chevron.left" withConfiguration:config];
-    [backButton setImage:backIcon forState:UIControlStateNormal];
-    [backButton setTintColor:UIColor.whiteColor];
-    [backButton addTarget:self action:@selector(handleBack) forControlEvents:UIControlEventTouchUpInside];
-    [headerView addSubview:backButton];
-
-    UILabel *titleLabel = [UILabel new];
-    titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    titleLabel.text = @"AMZZ";
-    titleLabel.textColor = UIColor.whiteColor;
-    titleLabel.font = [UIFont systemFontOfSize:17 weight:UIFontWeightBold];
-    titleLabel.textAlignment = NSTextAlignmentCenter;
-    [headerView addSubview:titleLabel];
-
-    [NSLayoutConstraint activateConstraints:@[
-        [headerView.topAnchor constraintEqualToAnchor:self.view.topAnchor],
-        [headerView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
-        [headerView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
-        [headerView.bottomAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor constant:44],
-
-        [backButton.leadingAnchor constraintEqualToAnchor:headerView.leadingAnchor constant:12],
-        [backButton.bottomAnchor constraintEqualToAnchor:headerView.bottomAnchor constant:-8],
-        [backButton.widthAnchor constraintEqualToConstant:32],
-        [backButton.heightAnchor constraintEqualToConstant:32],
-
-        [titleLabel.centerXAnchor constraintEqualToAnchor:headerView.centerXAnchor],
-        [titleLabel.centerYAnchor constraintEqualToAnchor:backButton.centerYAnchor]
-    ]];
-}
-
-- (void)setupTableView {
-    // UITableViewController 已创建 tableView（Grouped 样式），只需配置
-    self.tableView.translatesAutoresizingMaskIntoConstraints = NO;
-    self.tableView.backgroundColor = [UIColor clearColor];
-    self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
-    self.tableView.dataSource = self;
-    self.tableView.delegate = self;
-    self.tableView.rowHeight = 64;
-    self.tableView.showsVerticalScrollIndicator = NO;
-    [self.view addSubview:self.tableView];
-
-    [NSLayoutConstraint activateConstraints:@[
-        [self.tableView.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor constant:44],
-        [self.tableView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
-        [self.tableView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
-        [self.tableView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor]
-    ]];
-}
-
-- (void)handleBack {
-    if (self.navigationController && self.navigationController.viewControllers.count > 1) {
-        [self.navigationController popViewControllerAnimated:YES];
-    } else {
-        [self dismissViewControllerAnimated:YES completion:nil];
-    }
 }
 
 - (void)updateTheme {
     UIUserInterfaceStyle style = DYLikeUserInterfaceStyle();
     if (self.overrideUserInterfaceStyle != style) self.overrideUserInterfaceStyle = style;
+    UITraitCollection *theme = [UITraitCollection traitCollectionWithUserInterfaceStyle:self.overrideUserInterfaceStyle];
+    UINavigationBarAppearance *appearance = [UINavigationBarAppearance new];
+    [appearance configureWithOpaqueBackground];
+    appearance.backgroundColor = [UIColor.systemGroupedBackgroundColor resolvedColorWithTraitCollection:theme];
+    appearance.titleTextAttributes = @{NSForegroundColorAttributeName: [UIColor.labelColor resolvedColorWithTraitCollection:theme]};
+    self.navigationItem.standardAppearance = appearance;
+    self.navigationItem.scrollEdgeAppearance = appearance;
+    self.navigationItem.compactAppearance = appearance;
     [self setNeedsStatusBarAppearanceUpdate];
 }
 
+- (void)traitCollectionDidChange:(UITraitCollection *)previousTraitCollection {
+    [super traitCollectionDidChange:previousTraitCollection];
+    [self updateTheme];
+}
+
 - (UIStatusBarStyle)preferredStatusBarStyle {
-    return UIStatusBarStyleLightContent;
+    return DYLikeUserInterfaceStyle() == UIUserInterfaceStyleDark ? UIStatusBarStyleLightContent : UIStatusBarStyleDarkContent;
 }
 
 - (void)dealloc {
     [NSNotificationCenter.defaultCenter removeObserver:self];
 }
-
-#pragma mark - TableView Delegate & DataSource
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
     return 1;
@@ -126,89 +67,38 @@
     return DYLikeActionCount;
 }
 
+- (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
+    return @"功能开关";
+}
+
+- (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
+    return @"开启后，抖音对应操作会先显示确认弹窗；设置修改后立即生效。";
+}
+
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
     static NSArray<NSString *> *titles;
-    static NSArray<NSString *> *subtitles;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        titles = @[
-            @"启用点赞二次确认",
-            @"启用收藏二次确认",
-            @"启用关注二次确认",
-            @"启用评论点赞二次确认",
-            @"启用评论点踩二次确认"
-        ];
-        subtitles = @[
-            @"开启后防误触点赞视频",
-            @"开启后防误触收藏视频",
-            @"开启后防误触关注博主",
-            @"开启后防误触点赞评论",
-            @"开启后防误触点踩评论"
-        ];
+        titles = @[@"启用点赞二次确认", @"启用收藏二次确认", @"启用关注二次确认", @"启用评论点赞二次确认", @"启用评论点踩二次确认"];
     });
 
     NSUInteger index = (NSUInteger)indexPath.row;
-    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"AMZZDarkCell"];
-    if (!cell) {
-        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:@"AMZZDarkCell"];
-        cell.selectionStyle = UITableViewCellSelectionStyleNone;
-        cell.textLabel.textColor = UIColor.whiteColor;
-        cell.textLabel.font = [UIFont systemFontOfSize:15 weight:UIFontWeightMedium];
-        cell.detailTextLabel.textColor = [UIColor colorWithWhite:0.55 alpha:1.0];
-        cell.detailTextLabel.font = [UIFont systemFontOfSize:12 weight:UIFontWeightRegular];
-        cell.backgroundColor = [UIColor clearColor];
-    }
-
+    UITableViewCell *cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault
+                                                    reuseIdentifier:nil];
     cell.textLabel.text = titles[index];
-    cell.detailTextLabel.text = subtitles[index];
+    cell.textLabel.font = [UIFont preferredFontForTextStyle:UIFontTextStyleSubheadline];
+    cell.textLabel.adjustsFontForContentSizeCategory = YES;
+    cell.textLabel.textColor = UIColor.labelColor;
+    cell.backgroundColor = UIColor.secondarySystemGroupedBackgroundColor;
+    cell.selectionStyle = UITableViewCellSelectionStyleNone;
 
     UISwitch *toggle = [UISwitch new];
-    toggle.onTintColor = [UIColor colorWithRed:0.20 green:0.78 blue:0.35 alpha:1.0];
     toggle.on = DYLikeEnabled((DYLikeActionType)index);
     toggle.tag = (NSInteger)index;
+    toggle.accessibilityLabel = titles[index];
     [toggle addTarget:self action:@selector(toggleChanged:) forControlEvents:UIControlEventValueChanged];
     cell.accessoryView = toggle;
-
-    cell.backgroundView = nil;
-    for (UIView *v in [cell.contentView.subviews copy]) {
-        if (v.tag == 999) [v removeFromSuperview];
-    }
-
     return cell;
-}
-
-- (void)tableView:(UITableView *)tableView willDisplayCell:(UITableViewCell *)cell forRowAtIndexPath:(NSIndexPath *)indexPath {
-    NSInteger numberOfRows = [tableView numberOfRowsInSection:indexPath.section];
-    CGFloat margin = 16.0;
-    CGRect bounds = CGRectMake(margin, 0, cell.bounds.size.width - margin * 2, cell.bounds.size.height);
-
-    UIRectCorner corners = 0;
-    if (numberOfRows == 1) {
-        corners = UIRectCornerAllCorners;
-    } else if (indexPath.row == 0) {
-        corners = UIRectCornerTopLeft | UIRectCornerTopRight;
-    } else if (indexPath.row == numberOfRows - 1) {
-        corners = UIRectCornerBottomLeft | UIRectCornerBottomRight;
-    }
-
-    CAShapeLayer *layer = [CAShapeLayer layer];
-    UIBezierPath *path = (corners != 0) ? [UIBezierPath bezierPathWithRoundedRect:bounds byRoundingCorners:corners cornerRadii:CGSizeMake(16, 16)] : [UIBezierPath bezierPathWithRect:bounds];
-
-    layer.path = path.CGPath;
-    layer.fillColor = [UIColor colorWithRed:0.13 green:0.14 blue:0.17 alpha:1.0].CGColor;
-
-    UIView *bgView = [[UIView alloc] initWithFrame:cell.bounds];
-    [bgView.layer insertSublayer:layer atIndex:0];
-    bgView.backgroundColor = UIColor.clearColor;
-    cell.backgroundView = bgView;
-
-    if (indexPath.row < numberOfRows - 1) {
-        UIView *line = [[UIView alloc] initWithFrame:CGRectMake(margin + 16, cell.bounds.size.height - 0.5, cell.bounds.size.width - (margin * 2) - 16, 0.5)];
-        line.backgroundColor = [UIColor colorWithWhite:1.0 alpha:0.06];
-        line.tag = 999;
-        line.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleTopMargin;
-        [cell.contentView addSubview:line];
-    }
 }
 
 - (void)toggleChanged:(UISwitch *)toggle {
@@ -220,6 +110,10 @@
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
+}
+
+- (void)closeSettings {
+    [self dismissViewControllerAnimated:YES completion:nil];
 }
 
 @end
@@ -245,10 +139,14 @@ void DYLikeOpenSettings(void) {
 
         DYLikeSettingsViewController *settings = [DYLikeSettingsViewController new];
         settings.overrideUserInterfaceStyle = DYLikeUserInterfaceStyle();
-
-        UINavigationController *navigation = [[UINavigationController alloc] initWithRootViewController:settings];
-        navigation.modalPresentationStyle = UIModalPresentationFullScreen;
-        [top presentViewController:navigation animated:YES completion:nil];
+        if (top.navigationController) {
+            [top.navigationController pushViewController:settings animated:YES];
+        } else {
+            UINavigationController *navigation = [[UINavigationController alloc] initWithRootViewController:settings];
+            settings.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc]
+                initWithBarButtonSystemItem:UIBarButtonSystemItemClose target:settings action:@selector(closeSettings)];
+            [top presentViewController:navigation animated:YES completion:nil];
+        }
     });
 }
 
@@ -261,6 +159,7 @@ static BOOL DYLikeSet(id object, NSString *key, id value) {
     }
 }
 
+// 仅在抖音设置主页显示插件入口。
 static BOOL DYLikeIsMainSettingsPage(id owner, NSArray *sections) {
     id controller = DYLikeRead(owner, @"controllerDelegate");
     Class settingsClass = NSClassFromString(@"AWESettingsTableViewController");
@@ -313,6 +212,7 @@ void DYLikeInstallSettingsHook(void) {
         DYLikeSet(section, @"sectionHeaderHeight", @40);
         if (!valid) return value;
         NSMutableArray *sections = [value mutableCopy];
+        // 有插件（"账号"不在第一位）就放第二位，没插件就置顶
         NSUInteger insertIndex = 0;
         for (NSUInteger i = 0; i < sections.count; i++) {
             if ([DYLikeRead(sections[i], @"sectionHeaderTitle") isEqual:@"账号"]) {
