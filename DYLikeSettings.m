@@ -70,8 +70,23 @@
     return DYLikeActionCount;
 }
 
-- (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
-    return @"二次确认";
+- (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section {
+    UIView *header = [[UIView alloc] init];
+    UILabel *label = [[UILabel alloc] init];
+    label.text = @"二次确认";
+    label.font = [UIFont systemFontOfSize:14];  // DYYY 同款小字体
+    label.textColor = [UIColor colorWithWhite:1.0 alpha:0.5];
+    label.translatesAutoresizingMaskIntoConstraints = NO;
+    [header addSubview:label];
+    [NSLayoutConstraint activateConstraints:@[
+        [label.leadingAnchor constraintEqualToAnchor:header.leadingAnchor constant:20],
+        [label.bottomAnchor constraintEqualToAnchor:header.bottomAnchor constant:-8]
+    ]];
+    return header;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section {
+    return 36;
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
