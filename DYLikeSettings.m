@@ -142,14 +142,14 @@ void DYLikeOpenSettings(void) {
 
         DYLikeSettingsViewController *settings = [DYLikeSettingsViewController new];
         settings.overrideUserInterfaceStyle = DYLikeUserInterfaceStyle();
-        if (top.navigationController) {
-            [top.navigationController pushViewController:settings animated:YES];
-        } else {
-            UINavigationController *navigation = [[UINavigationController alloc] initWithRootViewController:settings];
-            settings.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc]
-                initWithBarButtonSystemItem:UIBarButtonSystemItemClose target:settings action:@selector(closeSettings)];
-            [top presentViewController:navigation animated:YES completion:nil];
-        }
+        // 始终独立呈现，确保有导航栏（AMZZ标题+返回按钮）
+        UINavigationController *navigation = [[UINavigationController alloc] initWithRootViewController:settings];
+        navigation.modalPresentationStyle = UIModalPresentationFullScreen;
+        // 抖音原生风格返回按钮（chevron）
+        UIImage *backImage = [UIImage systemImageNamed:@"chevron.left"];
+        settings.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc]
+            initWithImage:backImage style:UIBarButtonItemStylePlain target:settings action:@selector(closeSettings)];
+        [top presentViewController:navigation animated:YES completion:nil];
     });
 }
 
