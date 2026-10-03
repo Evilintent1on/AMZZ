@@ -386,6 +386,7 @@ static void DYInstallFeedButtonHook(void) {
     }
 }
 
+static void DYLikeInstallMoreHooks(void);
 static void DYInstallHooks(void) {
     static BOOL installed[sizeof(DYHooks) / sizeof(DYHooks[0])];
     NSUInteger added = 0;
