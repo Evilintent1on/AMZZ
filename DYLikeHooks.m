@@ -414,7 +414,8 @@ static void DYInstallHooks(void) {
     DYInstallFeedButtonHook();
     DYLikeInstallThemeHooks();
     DYLikeInstallSettingsHook();
-    DYLikeInstallMoreHooks();
+    // 暂时禁用更多功能 hook（导致闪退，待排查）
+    // DYLikeInstallMoreHooks();
     if (added) NSLog(@"[DYSecondaryConfirmation] Installed %lu action hooks", (unsigned long)added);
 }
 
