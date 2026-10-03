@@ -28,6 +28,8 @@
 
 - (void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
+    // 确保导航栏显示（AMZZ 标题）
+    self.navigationController.navigationBarHidden = NO;
     [self updateTheme];
     [self.tableView reloadData];
 }
