@@ -10,8 +10,8 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    self.title = @"AMZZ";
-    self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
+    // 隐藏系统导航栏，用 DYYY 风格自定义头部（无液态玻璃）
+    self.navigationController.navigationBarHidden = YES;
     self.tableView.backgroundColor = [UIColor colorWithRed:0.08 green:0.08 blue:0.10 alpha:1.0];
     self.tableView.separatorColor = [UIColor colorWithWhite:1.0 alpha:0.08];
     self.tableView.rowHeight = 52;
@@ -19,6 +19,13 @@
     self.tableView.sectionHeaderHeight = UITableViewAutomaticDimension;
     self.tableView.sectionFooterHeight = UITableViewAutomaticDimension;
     self.tableView.showsVerticalScrollIndicator = NO;
+    // DYYY 风格自定义头部：纯箭头返回 + AMZZ 标题
+    [self setupCustomHeader];
+    // 右滑返回手势（左边缘滑动 pop）
+    UIScreenEdgePanGestureRecognizer *edgePan = [[UIScreenEdgePanGestureRecognizer alloc]
+        initWithTarget:self action:@selector(handleEdgePan:)];
+    edgePan.edges = UIRectEdgeLeft;
+    [self.view addGestureRecognizer:edgePan];
     [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(updateTheme)
         name:DYLikeThemeDidChangeNotification object:nil];
     [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(updateTheme)
@@ -26,10 +33,66 @@
     [self updateTheme];
 }
 
+// DYYY 风格自定义头部
+- (void)setupCustomHeader {
+    UIView *header = [[UIView alloc] init];
+    header.backgroundColor = [UIColor colorWithRed:0.08 green:0.08 blue:0.10 alpha:1.0];
+    header.translatesAutoresizingMaskIntoConstraints = NO;
+    [self.view addSubview:header];
+
+    // 返回按钮：纯 chevron，无玻璃底（UIButtonTypeCustom 不会被套玻璃）
+    UIButton *backBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+    UIImage *chevron = [[UIImage systemImageNamed:@"chevron.left"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+    [backBtn setImage:chevron forState:UIControlStateNormal];
+    backBtn.tintColor = [UIColor whiteColor];
+    backBtn.translatesAutoresizingMaskIntoConstraints = NO;
+    [backBtn addTarget:self action:@selector(customGoBack) forControlEvents:UIControlEventTouchUpInside];
+    [header addSubview:backBtn];
+
+    // AMZZ 标题
+    UILabel *titleLabel = [[UILabel alloc] init];
+    titleLabel.text = @"AMZZ";
+    titleLabel.font = [UIFont boldSystemFontOfSize:17];
+    titleLabel.textColor = [UIColor whiteColor];
+    titleLabel.textAlignment = NSTextAlignmentCenter;
+    titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
+    [header addSubview:titleLabel];
+
+    UILayoutGuide *safe = self.view.safeAreaLayoutGuide;
+    [NSLayoutConstraint activateConstraints:@[
+        [header.topAnchor constraintEqualToAnchor:self.view.topAnchor],
+        [header.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
+        [header.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
+        [header.bottomAnchor constraintEqualToAnchor:safe.topAnchor constant:44],
+
+        [backBtn.leadingAnchor constraintEqualToAnchor:header.leadingAnchor constant:8],
+        [backBtn.bottomAnchor constraintEqualToAnchor:header.bottomAnchor constant:-2],
+        [backBtn.widthAnchor constraintEqualToConstant:40],
+        [backBtn.heightAnchor constraintEqualToConstant:40],
+
+        [titleLabel.centerXAnchor constraintEqualToAnchor:header.centerXAnchor],
+        [titleLabel.bottomAnchor constraintEqualToAnchor:header.bottomAnchor constant:-11],
+    ]];
+
+    // tableView 顶部留出头部位置
+    self.tableView.contentInset = UIEdgeInsetsMake(44 + safe.layoutFrame.origin.y, 0, 0, 0);
+    self.tableView.scrollIndicatorInsets = self.tableView.contentInset;
+}
+
+- (void)customGoBack {
+    [self.navigationController popViewControllerAnimated:YES];
+}
+
+- (void)handleEdgePan:(UIScreenEdgePanGestureRecognizer *)gesture {
+    if (gesture.state == UIGestureRecognizerStateRecognized) {
+        [self.navigationController popViewControllerAnimated:YES];
+    }
+}
+
 - (void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
-    // 确保导航栏可见（抖音设置页可能隐藏了导航栏）
-    self.navigationController.navigationBarHidden = NO;
+    // 隐藏系统导航栏（用自定义头部）
+    self.navigationController.navigationBarHidden = YES;
     [self updateTheme];
     [self.tableView reloadData];
 }
@@ -37,17 +100,6 @@
 - (void)updateTheme {
     UIUserInterfaceStyle style = DYLikeUserInterfaceStyle();
     if (self.overrideUserInterfaceStyle != style) self.overrideUserInterfaceStyle = style;
-    // 深色导航栏（DYYY 风格）
-    UINavigationBarAppearance *appearance = [UINavigationBarAppearance new];
-    [appearance configureWithOpaqueBackground];
-    appearance.backgroundColor = [UIColor colorWithRed:0.08 green:0.08 blue:0.10 alpha:1.0];
-    appearance.titleTextAttributes = @{NSForegroundColorAttributeName: [UIColor whiteColor]};
-    appearance.shadowColor = [UIColor clearColor];
-    self.navigationItem.standardAppearance = appearance;
-    self.navigationItem.scrollEdgeAppearance = appearance;
-    self.navigationItem.compactAppearance = appearance;
-    // 使用系统原生返回按钮（不自定义 leftBarButtonItem）
-    self.navigationController.navigationBar.tintColor = [UIColor whiteColor];
     [self setNeedsStatusBarAppearanceUpdate];
 }
 
