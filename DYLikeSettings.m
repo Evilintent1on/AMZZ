@@ -277,7 +277,7 @@
 - (void)toggleChanged:(UISwitch *)toggle {
 
     if (toggle.tag < 0 ||
-        toggle.tag >= DYLikeActionCount) {
+        (NSUInteger)toggle.tag >= (NSUInteger)DYLikeActionCount) {
         return;
     }
 
@@ -311,11 +311,6 @@
 
 - (UIStatusBarStyle)preferredStatusBarStyle {
     return UIStatusBarStyleLightContent;
-}
-
-@end
-
-    }
 }
 
 @end
