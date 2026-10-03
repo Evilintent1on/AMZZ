@@ -8,31 +8,20 @@
     return [super initWithStyle:UITableViewStyleInsetGrouped];
 }
 
+@implementation DYLikeSettingsViewController {
+    UIView *_amzzHeader;
+    UIImageView *_amzzBackArrow;
+    UILabel *_amzzTitleLabel;
+}
+
+- (instancetype)init {
+    return [super initWithStyle:UITableViewStyleInsetGrouped];
+}
+
 - (void)viewDidLoad {
     [super viewDidLoad];
-    self.title = @"AMZZ";
-    self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
-    // 返回按钮：UIImageView + 手势，导航栏设为不透明去玻璃
-    self.navigationItem.hidesBackButton = YES;
-    UIImageView *backImageView = [[UIImageView alloc] initWithImage:
-        [[UIImage systemImageNamed:@"chevron.left"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate]];
-    backImageView.tintColor = UIColor.labelColor;
-    backImageView.contentMode = UIViewContentModeScaleAspectFit;
-    backImageView.frame = CGRectMake(0, 0, 28, 28);
-    backImageView.userInteractionEnabled = YES;
-    [backImageView addGestureRecognizer:[[UITapGestureRecognizer alloc]
-        initWithTarget:self action:@selector(amzzGoBackTap:)]];
-    UIView *backContainer = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 32, 32)];
-    backImageView.center = backContainer.center;
-    [backContainer addSubview:backImageView];
-    self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithCustomView:backContainer];
-    // 导航栏不透明（去液态玻璃）
-    UINavigationBarAppearance *appearance = [UINavigationBarAppearance new];
-    [appearance configureWithOpaqueBackground];
-    appearance.backgroundColor = UIColor.systemGroupedBackgroundColor;
-    appearance.shadowColor = nil;
-    self.navigationItem.standardAppearance = appearance;
-    self.navigationItem.scrollEdgeAppearance = appearance;
+    // 隐藏系统导航栏，用插件自己的头部（完全控制，无玻璃）
+    self.navigationController.navigationBarHidden = YES;
     self.tableView.backgroundColor = UIColor.systemGroupedBackgroundColor;
     self.tableView.separatorColor = UIColor.separatorColor;
     self.tableView.rowHeight = UITableViewAutomaticDimension;
@@ -45,6 +34,72 @@
     [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(updateTheme)
         name:UIApplicationDidBecomeActiveNotification object:nil];
     [self updateTheme];
+    [self setupAmzzHeader];
+}
+
+// 插件自己的头部：返回箭头 + AMZZ 标题，无玻璃
+- (void)setupAmzzHeader {
+    if (_amzzHeader) return;
+    UIView *header = [[UIView alloc] init];
+    header.backgroundColor = UIColor.systemGroupedBackgroundColor;
+    [self.tableView addSubview:header];
+    _amzzHeader = header;
+
+    UIImageView *arrow = [[UIImageView alloc] initWithImage:
+        [[UIImage systemImageNamed:@"chevron.left"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate]];
+    arrow.tintColor = UIColor.labelColor;
+    arrow.contentMode = UIViewContentModeScaleAspectFit;
+    arrow.userInteractionEnabled = YES;
+    [arrow addGestureRecognizer:[[UITapGestureRecognizer alloc]
+        initWithTarget:self action:@selector(amzzGoBackTap:)]];
+    [header addSubview:arrow];
+    _amzzBackArrow = arrow;
+
+    UILabel *title = [[UILabel alloc] init];
+    title.text = @"AMZZ";
+    title.font = [UIFont boldSystemFontOfSize:17];
+    title.textColor = UIColor.labelColor;
+    title.textAlignment = NSTextAlignmentCenter;
+    [header addSubview:title];
+    _amzzTitleLabel = title;
+
+    [self layoutAmzzHeader];
+}
+
+// 头部布局：只在这里设置 frame，scrollViewDidScroll 只调 y
+- (void)layoutAmzzHeader {
+    if (!_amzzHeader) return;
+    CGFloat statusH = self.view.safeAreaInsets.top;
+    if (statusH < 20) {
+        UIWindow *win = self.view.window;
+        if (win) statusH = win.safeAreaInsets.top;
+        if (statusH < 20) statusH = 59;
+    }
+    CGFloat headerH = statusH + 44;
+    CGFloat w = self.view.bounds.size.width;
+    // 初始位置：y = -headerH（配合 contentInset）
+    _amzzHeader.frame = CGRectMake(self.tableView.contentOffset.x, self.tableView.contentOffset.y, w, headerH);
+    _amzzHeader.backgroundColor = UIColor.systemGroupedBackgroundColor;
+    _amzzBackArrow.frame = CGRectMake(12, statusH + 10, 24, 24);
+    _amzzTitleLabel.frame = CGRectMake(0, statusH, w, 44);
+    self.tableView.contentInset = UIEdgeInsetsMake(headerH, 0, 0, 0);
+    self.tableView.scrollIndicatorInsets = self.tableView.contentInset;
+}
+
+- (void)viewDidLayoutSubviews {
+    [super viewDidLayoutSubviews];
+    [self layoutAmzzHeader];
+}
+
+// 头部跟随滚动固定在顶部
+- (void)scrollViewDidScroll:(UIScrollView *)scrollView {
+    if (_amzzHeader) {
+        CGRect f = _amzzHeader.frame;
+        f.origin.x = scrollView.contentOffset.x;
+        f.origin.y = scrollView.contentOffset.y;
+        _amzzHeader.frame = f;
+        [self.tableView bringSubviewToFront:_amzzHeader];
+    }
 }
 
 - (void)amzzGoBackTap:(UITapGestureRecognizer *)gesture {
@@ -53,25 +108,27 @@
 
 - (void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
-    // 确保导航栏显示（AMZZ 标题）
-    self.navigationController.navigationBarHidden = NO;
-    // 隐藏系统返回按钮（用自定义无玻璃箭头）
-    self.navigationItem.hidesBackButton = YES;
+    // 隐藏系统导航栏，用插件自己的头部
+    self.navigationController.navigationBarHidden = YES;
     [self updateTheme];
     [self.tableView reloadData];
+}
+
+- (void)viewWillDisappear:(BOOL)animated {
+    [super viewWillDisappear:animated];
+    // 恢复系统导航栏，避免影响抖音其他页面
+    self.navigationController.navigationBarHidden = NO;
 }
 
 - (void)updateTheme {
     UIUserInterfaceStyle style = DYLikeUserInterfaceStyle();
     if (self.overrideUserInterfaceStyle != style) self.overrideUserInterfaceStyle = style;
-    UITraitCollection *theme = [UITraitCollection traitCollectionWithUserInterfaceStyle:self.overrideUserInterfaceStyle];
-    UINavigationBarAppearance *appearance = [UINavigationBarAppearance new];
-    [appearance configureWithOpaqueBackground];
-    appearance.backgroundColor = [UIColor.systemGroupedBackgroundColor resolvedColorWithTraitCollection:theme];
-    appearance.titleTextAttributes = @{NSForegroundColorAttributeName: [UIColor.labelColor resolvedColorWithTraitCollection:theme]};
-    self.navigationItem.standardAppearance = appearance;
-    self.navigationItem.scrollEdgeAppearance = appearance;
-    self.navigationItem.compactAppearance = appearance;
+    // 刷新自定义头部颜色
+    if (_amzzHeader) {
+        _amzzHeader.backgroundColor = UIColor.systemGroupedBackgroundColor;
+        _amzzBackArrow.tintColor = UIColor.labelColor;
+        _amzzTitleLabel.textColor = UIColor.labelColor;
+    }
     [self setNeedsStatusBarAppearanceUpdate];
 }
 
