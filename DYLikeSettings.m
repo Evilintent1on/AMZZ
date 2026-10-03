@@ -2,51 +2,96 @@
 #import "DYLikeCore.h"
 #import <objc/runtime.h>
 
-@interface DYLikeSettingsViewController ()
+@interface DYLikeSettingsViewController () <UITableViewDataSource, UITableViewDelegate>
+@property (nonatomic, strong) UITableView *tableView;
 @end
 
 @implementation DYLikeSettingsViewController
 
-- (instancetype)init {
-    return [super initWithStyle:UITableViewStyleGrouped];
-}
-
 - (void)viewDidLoad {
     [super viewDidLoad];
 
-    // 1. 设置深色背景 (与截图背景色一致 #141519)
+    // 全屏黑色背景
     self.view.backgroundColor = [UIColor colorWithRed:0.08 green:0.08 blue:0.10 alpha:1.0];
-    self.tableView.backgroundColor = UIColor.clearColor;
-    self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
-    self.tableView.rowHeight = UITableViewAutomaticDimension;
-    self.tableView.estimatedRowHeight = 58;
-    self.tableView.showsVerticalScrollIndicator = NO;
 
-    // 2. 导航栏标题 "AMZZ" 及返回按钮
-    self.navigationItem.title = @"AMZZ";
+    // 隐藏系统导航栏，使用自定义 Header
+    self.navigationController.navigationBarHidden = YES;
 
-    if (self.navigationController.viewControllers.count > 1) {
-        UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:17 weight:UIImageSymbolWeightMedium];
-        UIImage *backIcon = [UIImage systemImageNamed:@"chevron.left" withConfiguration:config];
-        self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithImage:backIcon style:UIBarButtonItemStylePlain target:self action:@selector(handleBack)];
-        self.navigationItem.leftBarButtonItem.tintColor = UIColor.whiteColor;
-    }
+    [self setupHeaderView];
+    [self setupTableView];
 
     [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(updateTheme)
         name:DYLikeThemeDidChangeNotification object:nil];
     [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(updateTheme)
         name:UIApplicationDidBecomeActiveNotification object:nil];
-    [self updateTheme];
 }
 
 - (void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
-    [self updateTheme];
+    self.navigationController.navigationBarHidden = YES;
     [self.tableView reloadData];
 }
 
+- (void)setupHeaderView {
+    UIView *headerView = [UIView new];
+    headerView.translatesAutoresizingMaskIntoConstraints = NO;
+    headerView.backgroundColor = [UIColor colorWithRed:0.08 green:0.08 blue:0.10 alpha:1.0];
+    [self.view addSubview:headerView];
+
+    UIButton *backButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    backButton.translatesAutoresizingMaskIntoConstraints = NO;
+    UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:18 weight:UIImageSymbolWeightMedium];
+    UIImage *backIcon = [UIImage systemImageNamed:@"chevron.left" withConfiguration:config];
+    [backButton setImage:backIcon forState:UIControlStateNormal];
+    [backButton setTintColor:UIColor.whiteColor];
+    [backButton addTarget:self action:@selector(handleBack) forControlEvents:UIControlEventTouchUpInside];
+    [headerView addSubview:backButton];
+
+    UILabel *titleLabel = [UILabel new];
+    titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
+    titleLabel.text = @"AMZZ";
+    titleLabel.textColor = UIColor.whiteColor;
+    titleLabel.font = [UIFont systemFontOfSize:17 weight:UIFontWeightBold];
+    titleLabel.textAlignment = NSTextAlignmentCenter;
+    [headerView addSubview:titleLabel];
+
+    [NSLayoutConstraint activateConstraints:@[
+        [headerView.topAnchor constraintEqualToAnchor:self.view.topAnchor],
+        [headerView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
+        [headerView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
+        [headerView.bottomAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor constant:44],
+
+        [backButton.leadingAnchor constraintEqualToAnchor:headerView.leadingAnchor constant:12],
+        [backButton.bottomAnchor constraintEqualToAnchor:headerView.bottomAnchor constant:-8],
+        [backButton.widthAnchor constraintEqualToConstant:32],
+        [backButton.heightAnchor constraintEqualToConstant:32],
+
+        [titleLabel.centerXAnchor constraintEqualToAnchor:headerView.centerXAnchor],
+        [titleLabel.centerYAnchor constraintEqualToAnchor:backButton.centerYAnchor]
+    ]];
+}
+
+- (void)setupTableView {
+    self.tableView = [[UITableView alloc] initWithFrame:CGRectZero style:UITableViewStyleGrouped];
+    self.tableView.translatesAutoresizingMaskIntoConstraints = NO;
+    self.tableView.backgroundColor = [UIColor clearColor];
+    self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
+    self.tableView.dataSource = self;
+    self.tableView.delegate = self;
+    self.tableView.rowHeight = 64;
+    self.tableView.showsVerticalScrollIndicator = NO;
+    [self.view addSubview:self.tableView];
+
+    [NSLayoutConstraint activateConstraints:@[
+        [self.tableView.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor constant:44],
+        [self.tableView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
+        [self.tableView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
+        [self.tableView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor]
+    ]];
+}
+
 - (void)handleBack {
-    if (self.navigationController.viewControllers.count > 1) {
+    if (self.navigationController && self.navigationController.viewControllers.count > 1) {
         [self.navigationController popViewControllerAnimated:YES];
     } else {
         [self dismissViewControllerAnimated:YES completion:nil];
@@ -56,25 +101,7 @@
 - (void)updateTheme {
     UIUserInterfaceStyle style = DYLikeUserInterfaceStyle();
     if (self.overrideUserInterfaceStyle != style) self.overrideUserInterfaceStyle = style;
-
-    UINavigationBarAppearance *appearance = [UINavigationBarAppearance new];
-    [appearance configureWithOpaqueBackground];
-    appearance.backgroundColor = [UIColor colorWithRed:0.08 green:0.08 blue:0.10 alpha:1.0];
-    appearance.titleTextAttributes = @{
-        NSForegroundColorAttributeName: UIColor.whiteColor,
-        NSFontAttributeName: [UIFont systemFontOfSize:17 weight:UIFontWeightBold]
-    };
-    appearance.shadowColor = UIColor.clearColor;
-
-    self.navigationItem.standardAppearance = appearance;
-    self.navigationItem.scrollEdgeAppearance = appearance;
-    self.navigationItem.compactAppearance = appearance;
     [self setNeedsStatusBarAppearanceUpdate];
-}
-
-- (void)traitCollectionDidChange:(UITraitCollection *)previousTraitCollection {
-    [super traitCollectionDidChange:previousTraitCollection];
-    [self updateTheme];
 }
 
 - (UIStatusBarStyle)preferredStatusBarStyle {
@@ -98,7 +125,6 @@
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
     static NSArray<NSString *> *titles;
     static NSArray<NSString *> *subtitles;
-    static NSArray<NSString *> *icons;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         titles = @[
@@ -115,13 +141,6 @@
             @"开启后防误触点赞评论",
             @"开启后防误触点踩评论"
         ];
-        icons = @[
-            @"arrow.uturn.backward",
-            @"message",
-            @"message",
-            @"hand.thumbsup",
-            @"hand.thumbsdown"
-        ];
     });
 
     NSUInteger index = (NSUInteger)indexPath.row;
@@ -133,24 +152,19 @@
         cell.textLabel.font = [UIFont systemFontOfSize:15 weight:UIFontWeightMedium];
         cell.detailTextLabel.textColor = [UIColor colorWithWhite:0.55 alpha:1.0];
         cell.detailTextLabel.font = [UIFont systemFontOfSize:12 weight:UIFontWeightRegular];
+        cell.backgroundColor = [UIColor clearColor];
     }
 
     cell.textLabel.text = titles[index];
     cell.detailTextLabel.text = subtitles[index];
 
-    UIImageSymbolConfiguration *iconConfig = [UIImageSymbolConfiguration configurationWithPointSize:15 weight:UIImageSymbolWeightRegular];
-    cell.imageView.image = [UIImage systemImageNamed:icons[index] withConfiguration:iconConfig];
-    cell.imageView.tintColor = [UIColor colorWithWhite:0.85 alpha:1.0];
-
     UISwitch *toggle = [UISwitch new];
     toggle.onTintColor = [UIColor colorWithRed:0.20 green:0.78 blue:0.35 alpha:1.0];
     toggle.on = DYLikeEnabled((DYLikeActionType)index);
     toggle.tag = (NSInteger)index;
-    toggle.accessibilityLabel = titles[index];
     [toggle addTarget:self action:@selector(toggleChanged:) forControlEvents:UIControlEventValueChanged];
     cell.accessoryView = toggle;
 
-    // 清理重用时的旧背景
     cell.backgroundView = nil;
     for (UIView *v in [cell.contentView.subviews copy]) {
         if (v.tag == 999) [v removeFromSuperview];
@@ -159,7 +173,6 @@
     return cell;
 }
 
-// 卡片大圆角、左右边距、内部分割线
 - (void)tableView:(UITableView *)tableView willDisplayCell:(UITableViewCell *)cell forRowAtIndexPath:(NSIndexPath *)indexPath {
     NSInteger numberOfRows = [tableView numberOfRowsInSection:indexPath.section];
     CGFloat margin = 16.0;
@@ -186,7 +199,7 @@
     cell.backgroundView = bgView;
 
     if (indexPath.row < numberOfRows - 1) {
-        UIView *line = [[UIView alloc] initWithFrame:CGRectMake(margin + 48, cell.bounds.size.height - 0.5, cell.bounds.size.width - (margin * 2) - 48, 0.5)];
+        UIView *line = [[UIView alloc] initWithFrame:CGRectMake(margin + 16, cell.bounds.size.height - 0.5, cell.bounds.size.width - (margin * 2) - 16, 0.5)];
         line.backgroundColor = [UIColor colorWithWhite:1.0 alpha:0.06];
         line.tag = 999;
         line.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleTopMargin;
@@ -203,10 +216,6 @@
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
-}
-
-- (void)closeSettings {
-    [self dismissViewControllerAnimated:YES completion:nil];
 }
 
 @end
@@ -232,14 +241,10 @@ void DYLikeOpenSettings(void) {
 
         DYLikeSettingsViewController *settings = [DYLikeSettingsViewController new];
         settings.overrideUserInterfaceStyle = DYLikeUserInterfaceStyle();
-        if (top.navigationController) {
-            [top.navigationController pushViewController:settings animated:YES];
-        } else {
-            UINavigationController *navigation = [[UINavigationController alloc] initWithRootViewController:settings];
-            settings.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc]
-                initWithBarButtonSystemItem:UIBarButtonSystemItemClose target:settings action:@selector(closeSettings)];
-            [top presentViewController:navigation animated:YES completion:nil];
-        }
+
+        UINavigationController *navigation = [[UINavigationController alloc] initWithRootViewController:settings];
+        navigation.modalPresentationStyle = UIModalPresentationFullScreen;
+        [top presentViewController:navigation animated:YES completion:nil];
     });
 }
 
