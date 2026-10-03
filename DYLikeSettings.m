@@ -3,8 +3,6 @@
 #import <objc/runtime.h>
 
 @interface DYLikeSettingsViewController ()
-@property (nonatomic, strong) UIVisualEffectView *blurEffectView;
-@property (nonatomic, strong) UIView *overlayView;
 @end
 
 @implementation DYLikeSettingsViewController
@@ -19,62 +17,86 @@
 
     self.title = @"AMZZ";
 
-    [self setupAppearance];
-    [self setupBackground];
-    [self setupTableView];
-}
+    // 导航栏
+    self.navigationController.navigationBar.prefersLargeTitles = NO;
+    self.navigationItem.largeTitleDisplayMode =
+        UINavigationItemLargeTitleDisplayModeNever;
 
-#pragma mark - Appearance
+    self.navigationController.navigationBar.tintColor =
+        [UIColor whiteColor];
 
-- (void)setupAppearance {
-    // 用系统默认导航栏，不做自定义，避免显示异常
-}
+    if (@available(iOS 13.0, *)) {
+        UINavigationBarAppearance *appearance =
+            [[UINavigationBarAppearance alloc] init];
 
-#pragma mark - Background
+        [appearance configureWithOpaqueBackground];
 
-- (void)setupBackground {
-    UIBlurEffect *blur =
-        [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
+        appearance.backgroundColor =
+            [UIColor colorWithRed:0.075
+                            green:0.075
+                             blue:0.075
+                            alpha:1.0];
 
-    self.blurEffectView =
-        [[UIVisualEffectView alloc] initWithEffect:blur];
+        appearance.titleTextAttributes = @{
+            NSForegroundColorAttributeName : [UIColor whiteColor],
+            NSFontAttributeName :
+                [UIFont systemFontOfSize:20
+                                   weight:UIFontWeightSemibold]
+        };
 
-    self.blurEffectView.frame = self.view.bounds;
-    self.blurEffectView.autoresizingMask =
-        UIViewAutoresizingFlexibleWidth |
-        UIViewAutoresizingFlexibleHeight;
+        self.navigationController.navigationBar.standardAppearance =
+            appearance;
 
-    [self.view insertSubview:self.blurEffectView atIndex:0];
+        self.navigationController.navigationBar.scrollEdgeAppearance =
+            appearance;
+    }
 
-    self.overlayView =
-        [[UIView alloc] initWithFrame:self.view.bounds];
+    // 返回按钮
+    UIButton *backButton =
+        [UIButton buttonWithType:UIButtonTypeSystem];
 
-    self.overlayView.backgroundColor =
-        [UIColor colorWithWhite:0 alpha:0.25];
+    [backButton setImage:
+        [UIImage systemImageNamed:@"chevron.left"]
+              forState:UIControlStateNormal];
 
-    self.overlayView.autoresizingMask =
-        UIViewAutoresizingFlexibleWidth |
-        UIViewAutoresizingFlexibleHeight;
+    backButton.tintColor = UIColor.whiteColor;
+    backButton.frame = CGRectMake(0, 0, 32, 32);
 
-    [self.view insertSubview:self.overlayView atIndex:1];
-}
+    [backButton addTarget:self
+                   action:@selector(closeSettings)
+         forControlEvents:UIControlEventTouchUpInside];
 
-#pragma mark - Table View
+    self.navigationItem.leftBarButtonItem =
+        [[UIBarButtonItem alloc]
+            initWithCustomView:backButton];
 
-- (void)setupTableView {
+    // 背景
+    self.view.backgroundColor =
+        [UIColor colorWithRed:0.075
+                        green:0.075
+                         blue:0.075
+                        alpha:1.0];
+
     self.tableView.backgroundColor = UIColor.clearColor;
 
     self.tableView.separatorStyle =
         UITableViewCellSeparatorStyleNone;
 
-    self.tableView.contentInset =
-        UIEdgeInsetsMake(20, 0, 0, 0);
+    self.tableView.showsVerticalScrollIndicator = YES;
 
     if (@available(iOS 15.0, *)) {
         self.tableView.sectionHeaderTopPadding = 0;
     }
 
-    self.tableView.showsVerticalScrollIndicator = NO;
+    // 注意：这里没有搜索框
+}
+
+- (void)closeSettings {
+    if (self.navigationController && self.navigationController.viewControllers.count > 1) {
+        [self.navigationController popViewControllerAnimated:YES];
+    } else {
+        [self dismissViewControllerAnimated:YES completion:nil];
+    }
 }
 
 #pragma mark - Data Source
