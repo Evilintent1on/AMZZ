@@ -160,10 +160,15 @@ void DYLikeOpenSettings(void) {
         // 始终独立呈现，确保有导航栏（AMZZ标题+返回按钮）
         UINavigationController *navigation = [[UINavigationController alloc] initWithRootViewController:settings];
         navigation.modalPresentationStyle = UIModalPresentationFullScreen;
-        // 抖音原生风格返回按钮（chevron）
-        UIImage *backImage = [UIImage systemImageNamed:@"chevron.left"];
-        settings.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc]
-            initWithImage:backImage style:UIBarButtonItemStylePlain target:settings action:@selector(closeSettings)];
+        // 抖音原生风格返回按钮（纯 chevron，无液态玻璃底）
+        UIButton *backButton = [UIButton buttonWithType:UIButtonTypeSystem];
+        UIImage *chevron = [[UIImage systemImageNamed:@"chevron.left"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+        [backButton setImage:chevron forState:UIControlStateNormal];
+        backButton.tintColor = [UIColor whiteColor];
+        backButton.frame = CGRectMake(0, 0, 44, 44);
+        backButton.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;
+        [backButton addTarget:settings action:@selector(closeSettings) forControlEvents:UIControlEventTouchUpInside];
+        settings.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithCustomView:backButton];
         [top presentViewController:navigation animated:YES completion:nil];
     });
 }
