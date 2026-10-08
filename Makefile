@@ -22,7 +22,18 @@ TWEAK_NAME = DYLike
 DYLike_FILES = Sources/Hooks/DYLikeHooks.m \
 	Sources/Core/DYLikeCore.m \
 	Sources/UI/DYLikePrompt.m \
-	Sources/Settings/DYLikeSettings.m
+	Sources/Settings/DYLikeSettings.m \
+	Sources/Hooks/DYLikeIMStealth.m \
+	Sources/Hooks/DYLikeIMWatchOnce.m \
+	Sources/Hooks/DYLikeIMAudioShare.m \
+	Sources/Hooks/DYLikeIMTimeLabel.m \
+	Sources/Hooks/DYLikeIMPublishDate.m \
+	Sources/Hooks/DYLikeIMTabBar.m \
+	Sources/Hooks/DYLikeIMAudioDuration.m \
+	Sources/Hooks/DYLikeIMVoiceTranslate.m \
+	Sources/Hooks/DYLikeIMAutoMsg.m \
+	Sources/Hooks/DYLikeIMSwipeQuote.m \
+	Sources/Hooks/DYLikeIMDice.m
 
 DYLike_CFLAGS = -fobjc-arc -Wall -Wextra -Wno-unused-parameter -Wno-deprecated-declarations \
 	-ISources/Core \
