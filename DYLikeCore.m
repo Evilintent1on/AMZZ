@@ -16,24 +16,6 @@ NSString *const DYLikeFavoriteEnabledKey = @"DYLikeConfirmFavorite";
 NSString *const DYLikeFollowEnabledKey = @"DYLikeConfirmFollow";
 NSString *const DYLikeCommentLikeEnabledKey = @"DYLikeConfirmCommentLike";
 NSString *const DYLikeCommentDislikeEnabledKey = @"DYLikeConfirmCommentDislike";
-NSString *const DYLikeAntiRecallEnabledKey = @"DYLikeAntiRecall";
-
-// 私信增强 (Yuki 功能移植)
-NSString *const DYLikeVoiceTranslateEnabledKey = @"DYLikeVoiceTranslate";
-NSString *const DYLikeStealthEnabledKey = @"DYLikeStealth";
-NSString *const DYLikeAudioShareEnabledKey = @"DYLikeAudioShare";
-NSString *const DYLikeWatchOnceEnabledKey = @"DYLikeWatchOnce";
-NSString *const DYLikeSwipeQuoteEnabledKey = @"DYLikeSwipeQuote";
-NSString *const DYLikeHideTimeEnabledKey = @"DYLikeHideTime";
-NSString *const DYLikeCustomTimeEnabledKey = @"DYLikeCustomTime";
-NSString *const DYLikeTimeLabelColorKey = @"DYLikeTimeLabelColor";
-NSString *const DYLikeDiceEnabledKey = @"DYLikeDice";
-NSString *const DYLikeAudioDurationEnabledKey = @"DYLikeAudioDuration";
-NSString *const DYLikeAudioDurationSecKey = @"DYLikeAudioDurationSec";
-NSString *const DYLikeTabBarMarkReadEnabledKey = @"DYLikeTabBarMarkRead";
-NSString *const DYLikeTabBarSwitchAccountEnabledKey = @"DYLikeTabBarSwitchAccount";
-NSString *const DYLikePublishDateEnabledKey = @"DYLikePublishDate";
-NSString *const DYLikeAutoMsgEnabledKey = @"DYLikeAutoMsg";
 NSNotificationName const DYLikeThemeDidChangeNotification = @"DYLikeThemeDidChange";
 
 static __thread NSUInteger DYLikeReplayDepth[DYLikeActionCount];
@@ -42,25 +24,8 @@ static __thread DYLikeIntent DYLikeReplayIntent[DYLikeActionCount];
 void DYLikeEnsureDefaults(void) {
     [NSUserDefaults.standardUserDefaults registerDefaults:@{
         DYLikeLikeEnabledKey: @NO, DYLikeFavoriteEnabledKey: @NO, DYLikeFollowEnabledKey: @NO,
-        DYLikeCommentLikeEnabledKey: @NO, DYLikeCommentDislikeEnabledKey: @NO,
-        DYLikeAntiRecallEnabledKey: @NO,
-        DYLikeVoiceTranslateEnabledKey: @NO, DYLikeStealthEnabledKey: @NO,
-        DYLikeAudioShareEnabledKey: @NO, DYLikeWatchOnceEnabledKey: @NO,
-        DYLikeSwipeQuoteEnabledKey: @NO, DYLikeHideTimeEnabledKey: @NO,
-        DYLikeCustomTimeEnabledKey: @NO, DYLikeTimeLabelColorKey: @"跟随系统",
-        DYLikeDiceEnabledKey: @NO, DYLikeAudioDurationEnabledKey: @NO,
-        DYLikeAudioDurationSecKey: @"15",
-        DYLikeTabBarMarkReadEnabledKey: @NO, DYLikeTabBarSwitchAccountEnabledKey: @NO,
-        DYLikePublishDateEnabledKey: @NO, DYLikeAutoMsgEnabledKey: @NO
+        DYLikeCommentLikeEnabledKey: @NO, DYLikeCommentDislikeEnabledKey: @NO
     }];
-}
-
-BOOL DYLikeIMFeatureEnabled(NSString *key) {
-    return [NSUserDefaults.standardUserDefaults boolForKey:key];
-}
-
-BOOL DYLikeAntiRecallEnabled(void) {
-    return [NSUserDefaults.standardUserDefaults boolForKey:DYLikeAntiRecallEnabledKey];
 }
 
 BOOL DYLikeEnabled(DYLikeActionType action) {
