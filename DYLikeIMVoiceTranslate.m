@@ -130,7 +130,7 @@ void DYLikeIMInstallVoiceTranslate(void) {
     if (m1) orig_vt_willDisplayCell = (void (*)(id, SEL, id, id, id))method_setImplementation(m1, (IMP)amzz_vt_willDisplayCell);
     Method m2 = class_getInstanceMethod(cls, @selector(viewWillDisappear:));
     if (m2) orig_vt_viewWillDisappear_ = (void (*)(id, SEL, BOOL))method_setImplementation(m2, (IMP)amzz_vt_viewWillDisappear_);
-    Method m3 = class_getInstanceMethod(cls, @selector(dealloc));
+    Method m3 = class_getInstanceMethod(cls, sel_registerName("dealloc"));
     if (m3) orig_vt_dealloc = (void (*)(id, SEL))method_setImplementation(m3, (IMP)amzz_vt_dealloc);
     NSLog(@"[DYSecondaryConfirmation] Installed voice-translate hooks");
 }
