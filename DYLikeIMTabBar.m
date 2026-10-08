@@ -15,6 +15,10 @@
 static const void *kAMZZTabBarMarkReadGRKey = &kAMZZTabBarMarkReadGRKey;
 static const void *kAMZZTabBarSwitchGRKey = &kAMZZTabBarSwitchGRKey;
 
+// 前向声明（AMZZTabBarProxy 的方法会调用它们，定义在下方）
+static void AMZZHandleLongPressMarkAsRead(UILongPressGestureRecognizer *gr);
+static void AMZZHandleLongPressQuickSwitch(UILongPressGestureRecognizer *gr);
+
 // 手势中转：UILongPressGestureRecognizer 需要 OC target，这里用单例中转到 C 函数
 @interface AMZZTabBarProxy : NSObject
 + (instancetype)shared;
