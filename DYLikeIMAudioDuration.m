@@ -39,9 +39,29 @@ static void amzz_audioRecorderDidFinish(id self, SEL _cmd, id r, BOOL ok, unsign
         if ([self respondsToSelector:@selector(setCurrentTime:)]) target = self;
         else if ([r respondsToSelector:@selector(setCurrentTime:)]) target = r;
         if (target) {
-            // setCurrentTime: 可能是 NSTimeInterval(double) 或 long，按 double 调
-            ((void (*)(id, SEL, double))objc_msgSend)(target, @selector(setCurrentTime:), (double)sec);
-            NSLog(@"[DYSecondaryConfirmation] audio duration set to %ld s", sec);
+            // 用 NSInvocation 自适应参数类型（double / long long / int）
+            NSMethodSignature *sig = [target methodSignatureForSelector:@selector(setCurrentTime:)];
+            if (sig && sig.numberOfArguments >= 3) {
+                NSInvocation *inv = [NSInvocation invocationWithMethodSignature:sig];
+                [inv setTarget:target];
+                [inv setSelector:@selector(setCurrentTime:)];
+                const char *t = [sig getArgumentTypeAtIndex:2];
+                if (t[0] == 'd') {
+                    double d = (double)sec;
+                    [inv setArgument:&d atIndex:2];
+                } else if (t[0] == 'q' || t[0] == 'l') {
+                    long long ll = sec;
+                    [inv setArgument:&ll atIndex:2];
+                } else if (t[0] == 'i' || t[0] == 'I') {
+                    int ii = (int)sec;
+                    [inv setArgument:&ii atIndex:2];
+                } else {
+                    NSLog(@"[DYSecondaryConfirmation] audio duration: unknown arg type %s", t);
+                    return;
+                }
+                [inv invoke];
+                NSLog(@"[DYSecondaryConfirmation] audio duration set to %ld s", sec);
+            }
         }
     } @catch (NSException *e) {
         NSLog(@"[DYSecondaryConfirmation] audio duration error: %@", e);
