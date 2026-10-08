@@ -386,6 +386,67 @@ static void DYInstallFeedButtonHook(void) {
     }
 }
 
+// ===== 私信防撤回 =====
+// hook 点来自 Yuki 逆向，签名经抖音 39.8.0 头文件确认：
+//   TIMXOMessage - (void)setRecalled:(BOOL);
+//   TIMXOMessage - (id)content;
+// 原理：setRecalled: 被调用时（对方撤回），在原实现把内容换成占位之前
+// 先把原文存到 associated object；之后 content 被读取时若已标记撤回
+// 且开关打开，直接返回缓存的原文。
+// 注意：这两个方法只在撤回事件时触发，非高频方法，可安全 swizzle。
+static const void *kAMZZRecalledContentKey = &kAMZZRecalledContentKey;
+static const void *kAMZZRecalledFlagKey = &kAMZZRecalledFlagKey;
+
+static void (*orig_TIMXOMessage_setRecalled)(id, SEL, BOOL) = NULL;
+static id (*orig_TIMXOMessage_content)(id, SEL) = NULL;
+
+static void amzz_TIMXOMessage_setRecalled(id self, SEL _cmd, BOOL recalled) {
+    if (recalled && DYLikeAntiRecallEnabled()) {
+        id original = orig_TIMXOMessage_content(self, @selector(content));
+        if (original) {
+            objc_setAssociatedObject(self, kAMZZRecalledContentKey, original, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+            objc_setAssociatedObject(self, kAMZZRecalledFlagKey, @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        }
+    }
+    orig_TIMXOMessage_setRecalled(self, _cmd, recalled);
+}
+
+static id amzz_TIMXOMessage_content(id self, SEL _cmd) {
+    id c = orig_TIMXOMessage_content(self, _cmd);
+    if (DYLikeAntiRecallEnabled()) {
+        NSNumber *flag = objc_getAssociatedObject(self, kAMZZRecalledFlagKey);
+        if (flag.boolValue) {
+            id cached = objc_getAssociatedObject(self, kAMZZRecalledContentKey);
+            if (cached) return cached;
+        }
+    }
+    return c;
+}
+
+static void DYLikeInstallAntiRecallHooks(void) {
+    Class cls = objc_getClass("TIMXOMessage");
+    if (!cls) return;
+    Method m1 = class_getInstanceMethod(cls, @selector(setRecalled:));
+    if (m1) orig_TIMXOMessage_setRecalled = (void (*)(id, SEL, BOOL))method_setImplementation(m1, (IMP)amzz_TIMXOMessage_setRecalled);
+    Method m2 = class_getInstanceMethod(cls, @selector(content));
+    if (m2) orig_TIMXOMessage_content = (id (*)(id, SEL))method_setImplementation(m2, (IMP)amzz_TIMXOMessage_content);
+    if (orig_TIMXOMessage_setRecalled && orig_TIMXOMessage_content)
+        NSLog(@"[DYSecondaryConfirmation] Installed anti-recall hooks");
+}
+
+// 私信增强 (Yuki 移植) 各模块安装函数（定义在 DYLikeIM*.m）
+void DYLikeIMInstallStealth(void);
+void DYLikeIMInstallWatchOnce(void);
+void DYLikeIMInstallAudioShare(void);
+void DYLikeIMInstallTimeLabel(void);
+void DYLikeIMInstallPublishDate(void);
+void DYLikeIMInstallTabBar(void);
+void DYLikeIMInstallAudioDuration(void);
+void DYLikeIMInstallVoiceTranslate(void);
+void DYLikeIMInstallAutoMsg(void);
+void DYLikeIMInstallSwipeQuote(void);
+void DYLikeIMInstallDice(void);
+
 static void DYInstallHooks(void) {
     static BOOL installed[sizeof(DYHooks) / sizeof(DYHooks[0])];
     NSUInteger added = 0;
@@ -413,6 +474,19 @@ static void DYInstallHooks(void) {
     DYInstallFeedButtonHook();
     DYLikeInstallThemeHooks();
     DYLikeInstallSettingsHook();
+    DYLikeInstallAntiRecallHooks();
+    // 私信增强 (Yuki 移植)：各功能默认关闭，hook 常驻、运行时按开关生效
+    DYLikeIMInstallStealth();
+    DYLikeIMInstallWatchOnce();
+    DYLikeIMInstallAudioShare();
+    DYLikeIMInstallTimeLabel();
+    DYLikeIMInstallPublishDate();
+    DYLikeIMInstallTabBar();
+    DYLikeIMInstallAudioDuration();
+    DYLikeIMInstallVoiceTranslate();
+    DYLikeIMInstallAutoMsg();
+    DYLikeIMInstallSwipeQuote();
+    DYLikeIMInstallDice();
     if (added) NSLog(@"[DYSecondaryConfirmation] Installed %lu action hooks", (unsigned long)added);
 }
 
