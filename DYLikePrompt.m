@@ -79,48 +79,10 @@ static __weak DYLikePrompt *DYLikeVisiblePrompt;
 
     self.panel = [UIView new];
     self.panel.translatesAutoresizingMaskIntoConstraints = NO;
-    self.panel.backgroundColor = [UIColor clearColor];
+    self.panel.backgroundColor = UIColor.whiteColor;
     self.panel.layer.cornerRadius = 16;
     self.panel.layer.cornerCurve = kCACornerCurveContinuous;
     self.panel.clipsToBounds = YES;
-    // 系统液态玻璃（iOS 26+ 公开 API UIGlassEffect，.clear 最透）
-    UIVisualEffect *glassEffect = nil;
-    if (@available(iOS 26, *)) {
-        Class glassCls = NSClassFromString(@"UIGlassEffect");
-        if (glassCls) {
-            SEL initStyle = NSSelectorFromString(@"initWithStyle:");
-            if ([glassCls instancesRespondToSelector:initStyle]) {
-                NSMethodSignature *sig = [glassCls instanceMethodSignatureForSelector:initStyle];
-                NSInvocation *inv = [NSInvocation invocationWithMethodSignature:sig];
-                [inv setSelector:initStyle];
-                [inv setTarget:[glassCls alloc]];
-                NSInteger styleClear = 1;  // UIGlassEffectStyleClear
-                [inv setArgument:&styleClear atIndex:2];
-                [inv invoke];
-                __unsafe_unretained UIVisualEffect *eff = nil;
-                [inv getReturnValue:&eff];
-                glassEffect = eff;
-            } else {
-                glassEffect = [[glassCls alloc] init];
-            }
-        }
-    }
-    if (!glassEffect) {
-        glassEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemChromeMaterial];
-    }
-    UIVisualEffectView *glass = [[UIVisualEffectView alloc] initWithEffect:glassEffect];
-    glass.translatesAutoresizingMaskIntoConstraints = NO;
-    glass.userInteractionEnabled = NO;
-    glass.layer.cornerRadius = 16;
-    glass.layer.cornerCurve = kCACornerCurveContinuous;
-    glass.clipsToBounds = YES;
-    [self.panel addSubview:glass];
-    [NSLayoutConstraint activateConstraints:@[
-        [glass.topAnchor constraintEqualToAnchor:self.panel.topAnchor],
-        [glass.leadingAnchor constraintEqualToAnchor:self.panel.leadingAnchor],
-        [glass.trailingAnchor constraintEqualToAnchor:self.panel.trailingAnchor],
-        [glass.bottomAnchor constraintEqualToAnchor:self.panel.bottomAnchor],
-    ]];
     [self addSubview:self.panel];
 
     // 上半部分内容容器
