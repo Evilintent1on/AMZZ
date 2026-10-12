@@ -97,20 +97,6 @@ static __weak DYLikePrompt *DYLikeVisiblePrompt;
         [glass.trailingAnchor constraintEqualToAnchor:self.panel.trailingAnchor],
         [glass.bottomAnchor constraintEqualToAnchor:self.panel.bottomAnchor],
     ]];
-    UIView *tint = [UIView new];
-    tint.translatesAutoresizingMaskIntoConstraints = NO;
-    tint.userInteractionEnabled = NO;
-    tint.backgroundColor = [UIColor colorWithWhite:1 alpha:0.25];
-    tint.layer.cornerRadius = 16;
-    tint.layer.cornerCurve = kCACornerCurveContinuous;
-    tint.clipsToBounds = YES;
-    [self.panel addSubview:tint];
-    [NSLayoutConstraint activateConstraints:@[
-        [tint.topAnchor constraintEqualToAnchor:self.panel.topAnchor],
-        [tint.leadingAnchor constraintEqualToAnchor:self.panel.leadingAnchor],
-        [tint.trailingAnchor constraintEqualToAnchor:self.panel.trailingAnchor],
-        [tint.bottomAnchor constraintEqualToAnchor:self.panel.bottomAnchor],
-    ]];
     [self addSubview:self.panel];
 
     // 上半部分内容容器
