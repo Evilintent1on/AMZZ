@@ -83,12 +83,26 @@ static __weak DYLikePrompt *DYLikeVisiblePrompt;
     self.panel.layer.cornerRadius = 16;
     self.panel.layer.cornerCurve = kCACornerCurveContinuous;
     self.panel.clipsToBounds = YES;
-    // 系统液态玻璃（iOS 26+ 公开 API UIGlassEffect）
+    // 系统液态玻璃（iOS 26+ 公开 API UIGlassEffect，.clear 最透）
     UIVisualEffect *glassEffect = nil;
     if (@available(iOS 26, *)) {
         Class glassCls = NSClassFromString(@"UIGlassEffect");
         if (glassCls) {
-            glassEffect = [[glassCls alloc] init];
+            SEL initStyle = NSSelectorFromString(@"initWithStyle:");
+            if ([glassCls instancesRespondToSelector:initStyle]) {
+                NSMethodSignature *sig = [glassCls instanceMethodSignatureForSelector:initStyle];
+                NSInvocation *inv = [NSInvocation invocationWithMethodSignature:sig];
+                [inv setSelector:initStyle];
+                [inv setTarget:[glassCls alloc]];
+                NSInteger styleClear = 1;  // UIGlassEffectStyleClear
+                [inv setArgument:&styleClear atIndex:2];
+                [inv invoke];
+                __unsafe_unretained UIVisualEffect *eff = nil;
+                [inv getReturnValue:&eff];
+                glassEffect = eff;
+            } else {
+                glassEffect = [[glassCls alloc] init];
+            }
         }
     }
     if (!glassEffect) {
