@@ -79,10 +79,24 @@ static __weak DYLikePrompt *DYLikeVisiblePrompt;
 
     self.panel = [UIView new];
     self.panel.translatesAutoresizingMaskIntoConstraints = NO;
-    self.panel.backgroundColor = UIColor.whiteColor;
+    self.panel.backgroundColor = [UIColor clearColor];
     self.panel.layer.cornerRadius = 16;
     self.panel.layer.cornerCurve = kCACornerCurveContinuous;
     self.panel.clipsToBounds = YES;
+    // 系统弹窗同款：浅色毛玻璃（ExtraLight，最透）
+    UIVisualEffectView *glass = [[UIVisualEffectView alloc] initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleExtraLight]];
+    glass.translatesAutoresizingMaskIntoConstraints = NO;
+    glass.userInteractionEnabled = NO;
+    glass.layer.cornerRadius = 16;
+    glass.layer.cornerCurve = kCACornerCurveContinuous;
+    glass.clipsToBounds = YES;
+    [self.panel addSubview:glass];
+    [NSLayoutConstraint activateConstraints:@[
+        [glass.topAnchor constraintEqualToAnchor:self.panel.topAnchor],
+        [glass.leadingAnchor constraintEqualToAnchor:self.panel.leadingAnchor],
+        [glass.trailingAnchor constraintEqualToAnchor:self.panel.trailingAnchor],
+        [glass.bottomAnchor constraintEqualToAnchor:self.panel.bottomAnchor],
+    ]];
     [self addSubview:self.panel];
 
     // 上半部分内容容器
