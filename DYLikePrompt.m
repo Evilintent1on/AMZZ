@@ -83,8 +83,8 @@ static __weak DYLikePrompt *DYLikeVisiblePrompt;
     self.panel.layer.cornerRadius = 16;
     self.panel.layer.cornerCurve = kCACornerCurveContinuous;
     self.panel.clipsToBounds = YES;
-    // 系统弹窗同款：浅色毛玻璃（ExtraLight，最透）
-    UIVisualEffectView *glass = [[UIVisualEffectView alloc] initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleExtraLight]];
+    // 系统弹窗同款：超薄毛玻璃（最透，黑白自适应）
+    UIVisualEffectView *glass = [[UIVisualEffectView alloc] initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemUltraThinMaterial]];
     glass.translatesAutoresizingMaskIntoConstraints = NO;
     glass.userInteractionEnabled = NO;
     glass.layer.cornerRadius = 16;
