@@ -83,8 +83,18 @@ static __weak DYLikePrompt *DYLikeVisiblePrompt;
     self.panel.layer.cornerRadius = 16;
     self.panel.layer.cornerCurve = kCACornerCurveContinuous;
     self.panel.clipsToBounds = YES;
-    // 液态玻璃底：毛玻璃 + 浅色罩
-    UIVisualEffectView *glass = [[UIVisualEffectView alloc] initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemMaterial]];
+    // 系统液态玻璃（iOS 26+ 公开 API UIGlassEffect）
+    UIVisualEffect *glassEffect = nil;
+    if (@available(iOS 26, *)) {
+        Class glassCls = NSClassFromString(@"UIGlassEffect");
+        if (glassCls) {
+            glassEffect = [[glassCls alloc] init];
+        }
+    }
+    if (!glassEffect) {
+        glassEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemChromeMaterial];
+    }
+    UIVisualEffectView *glass = [[UIVisualEffectView alloc] initWithEffect:glassEffect];
     glass.translatesAutoresizingMaskIntoConstraints = NO;
     glass.userInteractionEnabled = NO;
     glass.layer.cornerRadius = 16;
