@@ -211,11 +211,11 @@ static void DYStylePanelNavigationBar(UIViewController *controller) {
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    return 2;
+    return 5;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-    NSArray<NSString *> *tabTitles = @[@"移除喜欢", @"移除收藏"];
+    NSArray<NSString *> *tabTitles = @[@"移除作品", @"移除日常", @"移除喜欢", @"移除收藏", @"移除足迹"];
     NSUInteger row = (NSUInteger)indexPath.row;
     UITableViewCell *cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:nil];
     cell.textLabel.text = tabTitles[row];
@@ -225,7 +225,8 @@ static void DYStylePanelNavigationBar(UIViewController *controller) {
     cell.backgroundColor = UIColor.secondarySystemGroupedBackgroundColor;
     cell.selectionStyle = UITableViewCellSelectionStyleNone;
     UISwitch *toggle = [UISwitch new];
-    toggle.on = [NSUserDefaults.standardUserDefaults boolForKey:(row == 0 ? DYProfileRemoveLikeTabKey : DYProfileRemoveFavoriteTabKey)];
+    NSArray<NSString *> *tabKeys = @[DYProfileRemovePostTabKey, DYProfileRemoveDailyTabKey, DYProfileRemoveLikeTabKey, DYProfileRemoveFavoriteTabKey, DYProfileRemoveFootprintTabKey];
+    toggle.on = [NSUserDefaults.standardUserDefaults boolForKey:tabKeys[row]];
     toggle.tag = (NSInteger)row;
     toggle.accessibilityLabel = tabTitles[row];
     [toggle addTarget:self action:@selector(dyTabToggleChanged:) forControlEvents:UIControlEventValueChanged];
@@ -234,7 +235,9 @@ static void DYStylePanelNavigationBar(UIViewController *controller) {
 }
 
 - (void)dyTabToggleChanged:(UISwitch *)toggle {
-    NSString *key = toggle.tag == 0 ? DYProfileRemoveLikeTabKey : DYProfileRemoveFavoriteTabKey;
+    NSArray<NSString *> *tabKeys = @[DYProfileRemovePostTabKey, DYProfileRemoveDailyTabKey, DYProfileRemoveLikeTabKey, DYProfileRemoveFavoriteTabKey, DYProfileRemoveFootprintTabKey];
+    if (toggle.tag < 0 || (NSUInteger)toggle.tag >= tabKeys.count) return;
+    NSString *key = tabKeys[(NSUInteger)toggle.tag];
     [NSUserDefaults.standardUserDefaults setBool:toggle.isOn forKey:key];
     dispatch_async(dispatch_get_main_queue(), ^{
         DYProfileTabsRefresh();
@@ -242,7 +245,7 @@ static void DYStylePanelNavigationBar(UIViewController *controller) {
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
-    return @"开启后，我的页不显示对应分页；关闭后恢复显示。也可以双击分页标题切换：作品→收藏、日常→喜欢。";
+    return @"开启后，我的页不显示对应分页；关闭后恢复显示。五项全开时不会真的移光，会保留全部分页。喜欢/收藏也可以双击分页标题切换：作品→收藏、日常→喜欢。";
 }
 
 @end
@@ -478,8 +481,9 @@ static void DYStylePanelNavigationBar(UIViewController *controller) {
         cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
         cell.selectionStyle = UITableViewCellSelectionStyleDefault;
         NSUInteger removedTabs = 0;
-        if ([NSUserDefaults.standardUserDefaults boolForKey:DYProfileRemoveLikeTabKey]) removedTabs++;
-        if ([NSUserDefaults.standardUserDefaults boolForKey:DYProfileRemoveFavoriteTabKey]) removedTabs++;
+        for (NSString *tabKey in @[DYProfileRemovePostTabKey, DYProfileRemoveDailyTabKey, DYProfileRemoveLikeTabKey, DYProfileRemoveFavoriteTabKey, DYProfileRemoveFootprintTabKey]) {
+            if ([NSUserDefaults.standardUserDefaults boolForKey:tabKey]) removedTabs++;
+        }
         cell.detailTextLabel.text = removedTabs ? [NSString stringWithFormat:@"已移除 %lu 项", (unsigned long)removedTabs] : @"未移除";
         return cell;
     }

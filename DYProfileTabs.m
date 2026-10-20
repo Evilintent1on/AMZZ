@@ -25,8 +25,11 @@
 #import <objc/runtime.h>
 #import <string.h>
 
+NSString *const DYProfileRemovePostTabKey = @"DYLikeRemovePostTab";
+NSString *const DYProfileRemoveDailyTabKey = @"DYLikeRemoveDailyTab";
 NSString *const DYProfileRemoveLikeTabKey = @"DYLikeRemoveLikeTab";
 NSString *const DYProfileRemoveFavoriteTabKey = @"DYLikeRemoveFavoriteTab";
+NSString *const DYProfileRemoveFootprintTabKey = @"DYLikeRemoveFootprintTab";
 
 // 抖音个人主页分页相关类，仅声明用到的接口（分页类型：作品 0 / 喜欢 2 / 收藏 16 / 日常 38 / 足迹 46）
 @interface AWEUserProfileTabModel : NSObject
@@ -51,9 +54,16 @@ static NSHashTable *DYProfileTabComponents;
 static BOOL DYProfileTabRemoved(id tab) {
     if (![tab respondsToSelector:@selector(profileTabType)]) return NO;
     NSInteger type = [(AWEUserProfileTabModel *)tab profileTabType];
-    if (type == 2) return [NSUserDefaults.standardUserDefaults boolForKey:DYProfileRemoveLikeTabKey];
-    if (type == 16) return [NSUserDefaults.standardUserDefaults boolForKey:DYProfileRemoveFavoriteTabKey];
-    return NO;
+    NSString *key = nil;
+    switch (type) {
+        case 0:  key = DYProfileRemovePostTabKey; break;      // 作品
+        case 38: key = DYProfileRemoveDailyTabKey; break;     // 日常
+        case 2:  key = DYProfileRemoveLikeTabKey; break;      // 喜欢
+        case 16: key = DYProfileRemoveFavoriteTabKey; break;  // 收藏
+        case 46: key = DYProfileRemoveFootprintTabKey; break; // 足迹
+        default: break;
+    }
+    return key && [NSUserDefaults.standardUserDefaults boolForKey:key];
 }
 
 static BOOL DYProfileTabHelperMine(AWEUserProfileTabHelper *helper) {
