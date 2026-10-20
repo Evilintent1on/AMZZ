@@ -37,6 +37,14 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.title = @"按钮排序";
+    // 抖音全局导航栏外观是白字，盖到这个弹窗上会看不清：给本页导航栏单独指定浅底黑字
+    UINavigationBarAppearance *barAppearance = [UINavigationBarAppearance new];
+    [barAppearance configureWithOpaqueBackground];
+    barAppearance.backgroundColor = UIColor.systemBackgroundColor;
+    barAppearance.titleTextAttributes = @{NSForegroundColorAttributeName: UIColor.blackColor};
+    self.navigationController.navigationBar.standardAppearance = barAppearance;
+    self.navigationController.navigationBar.scrollEdgeAppearance = barAppearance;
+    self.navigationController.navigationBar.tintColor = UIColor.blackColor;
     self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone
                                                                                            target:self
                                                                                            action:@selector(dyDone)];
