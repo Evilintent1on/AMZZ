@@ -3,9 +3,9 @@
 //  AMZZ
 //
 //  我的页分页移除：移植自 DYKiller 的个人主页精简（DKProfileCleanTabs），只保留喜欢/收藏两项。
-//  控制方式（用户定）：不放设置开关，直接双击分页标题切换——
+//  控制方式（用户定）：双击分页标题切换，设置页里也有同样的两个开关——
 //   - 双击「作品」标题 → 移除/恢复「收藏」分页
-//   - 双击「收藏」标题 → 移除/恢复「喜欢」分页
+//   - 双击「日常」标题 → 移除/恢复「喜欢」分页
 //
 //  移除实现（与原版一致）：
 //   - AWEUserProfileTabHelper.tabArray 懒构建并缓存（同时写 _numOfTab），分页标题由它生成。
@@ -191,7 +191,7 @@ static void DYAttachTabGesture(UIView *root);
     }
     NSString *key = nil;
     if ([hit isEqualToString:@"作品"]) key = DYProfileRemoveFavoriteTabKey;      // 双击作品 → 切换收藏
-    else if ([hit isEqualToString:@"收藏"]) key = DYProfileRemoveLikeTabKey;     // 双击收藏 → 切换喜欢
+    else if ([hit isEqualToString:@"日常"]) key = DYProfileRemoveLikeTabKey;     // 双击日常 → 切换喜欢
     if (!key) return;
     NSUserDefaults *defaults = NSUserDefaults.standardUserDefaults;
     [defaults setBool:![defaults boolForKey:key] forKey:key];

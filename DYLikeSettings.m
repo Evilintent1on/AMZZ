@@ -1,5 +1,6 @@
 #import "DYLikeSettings.h"
 #import "../Core/DYLikeCore.h"
+#import "../Hooks/DYProfileTabs.h"
 #import <objc/runtime.h>
 
 @implementation DYLikeSettingsViewController {
@@ -165,17 +166,17 @@
 }
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
-    return 1;
+    return 2;
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    return DYLikeActionCount;
+    return section == 0 ? DYLikeActionCount : 2;
 }
 
 - (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section {
     UIView *header = [[UIView alloc] init];
     UILabel *label = [[UILabel alloc] init];
-    label.text = @"二次确认";
+    label.text = section == 0 ? @"二次确认" : @"我的页分页";
     label.font = [UIFont systemFontOfSize:13];
     label.textColor = [UIColor secondaryLabelColor];
     label.translatesAutoresizingMaskIntoConstraints = NO;
@@ -197,10 +198,32 @@
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
+    if (section == 1) return @"开启后，我的页不显示对应分页；关闭后恢复显示。也可以双击分页标题切换：作品→收藏、日常→喜欢。";
     return @"开启后，抖音对应操作会先显示确认弹窗；设置修改后立即生效。";
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    if (indexPath.section == 1) {
+        NSArray<NSString *> *tabTitles = @[@"移除喜欢", @"移除收藏"];
+        NSUInteger row = (NSUInteger)indexPath.row;
+        UITableViewCell *cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault
+                                                        reuseIdentifier:nil];
+        cell.textLabel.text = tabTitles[row];
+        cell.textLabel.font = [UIFont preferredFontForTextStyle:UIFontTextStyleSubheadline];
+        cell.textLabel.adjustsFontForContentSizeCategory = YES;
+        cell.textLabel.textColor = UIColor.labelColor;
+        cell.backgroundColor = UIColor.secondarySystemGroupedBackgroundColor;
+        cell.selectionStyle = UITableViewCellSelectionStyleNone;
+
+        UISwitch *toggle = [UISwitch new];
+        toggle.on = [NSUserDefaults.standardUserDefaults boolForKey:(row == 0 ? DYProfileRemoveLikeTabKey : DYProfileRemoveFavoriteTabKey)];
+        toggle.tag = (NSInteger)row;
+        toggle.accessibilityLabel = tabTitles[row];
+        [toggle addTarget:self action:@selector(profileTabToggleChanged:) forControlEvents:UIControlEventValueChanged];
+        cell.accessoryView = toggle;
+        return cell;
+    }
+
     static NSArray<NSString *> *titles;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
@@ -231,6 +254,14 @@
     NSArray<NSString *> *keys = @[DYLikeLikeEnabledKey, DYLikeFavoriteEnabledKey, DYLikeFollowEnabledKey,
         DYLikeCommentLikeEnabledKey, DYLikeCommentDislikeEnabledKey];
     [NSUserDefaults.standardUserDefaults setBool:toggle.isOn forKey:keys[(NSUInteger)toggle.tag]];
+}
+
+- (void)profileTabToggleChanged:(UISwitch *)toggle {
+    NSString *key = toggle.tag == 0 ? DYProfileRemoveLikeTabKey : DYProfileRemoveFavoriteTabKey;
+    [NSUserDefaults.standardUserDefaults setBool:toggle.isOn forKey:key];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        DYProfileTabsRefresh();
+    });
 }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
