@@ -37,14 +37,7 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.title = @"分享面板精简";
-    // 抖音全局导航栏外观是白字，盖到这个弹窗上会看不清：给本页导航栏单独指定浅底黑字
-    UINavigationBarAppearance *barAppearance = [UINavigationBarAppearance new];
-    [barAppearance configureWithOpaqueBackground];
-    barAppearance.backgroundColor = UIColor.systemBackgroundColor;
-    barAppearance.titleTextAttributes = @{NSForegroundColorAttributeName: UIColor.blackColor};
-    self.navigationController.navigationBar.standardAppearance = barAppearance;
-    self.navigationController.navigationBar.scrollEdgeAppearance = barAppearance;
-    self.navigationController.navigationBar.tintColor = UIColor.blackColor;
+    DYStylePanelNavigationBar(self);
     self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone
                                                                                            target:self
                                                                                            action:@selector(dyDone)];
@@ -120,6 +113,136 @@
 
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
     return @"开关打开的按钮会从分享面板移除；点左上角「排序」可拖动调整顺序（只在同一行内有效）。下次打开分享面板生效。";
+}
+
+@end
+
+static void DYStylePanelNavigationBar(UIViewController *controller) {
+    // 抖音全局导航栏外观是白字，盖到弹窗上会看不清：给弹窗导航栏单独指定浅底黑字
+    UINavigationBarAppearance *barAppearance = [UINavigationBarAppearance new];
+    [barAppearance configureWithOpaqueBackground];
+    barAppearance.backgroundColor = UIColor.systemBackgroundColor;
+    barAppearance.titleTextAttributes = @{NSForegroundColorAttributeName: UIColor.blackColor};
+    controller.navigationController.navigationBar.standardAppearance = barAppearance;
+    controller.navigationController.navigationBar.scrollEdgeAppearance = barAppearance;
+    controller.navigationController.navigationBar.tintColor = UIColor.blackColor;
+}
+
+@interface DYConfirmPanelViewController : UITableViewController
+@end
+
+@implementation DYConfirmPanelViewController
+
+- (instancetype)init {
+    return [super initWithStyle:UITableViewStyleInsetGrouped];
+}
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    self.title = @"二次确认";
+    DYStylePanelNavigationBar(self);
+    self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone
+                                                                                           target:self
+                                                                                           action:@selector(dyDone)];
+    self.tableView.backgroundColor = UIColor.systemGroupedBackgroundColor;
+}
+
+- (void)dyDone {
+    [self dismissViewControllerAnimated:YES completion:nil];
+}
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    return DYLikeActionCount;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    NSArray<NSString *> *confirmTitles = @[@"启用点赞二次确认", @"启用收藏二次确认", @"启用关注二次确认", @"启用评论点赞二次确认", @"启用评论点踩二次确认"];
+    NSUInteger index = (NSUInteger)indexPath.row;
+    UITableViewCell *cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:nil];
+    cell.textLabel.text = confirmTitles[index];
+    cell.textLabel.font = [UIFont preferredFontForTextStyle:UIFontTextStyleSubheadline];
+    cell.textLabel.adjustsFontForContentSizeCategory = YES;
+    cell.textLabel.textColor = UIColor.labelColor;
+    cell.backgroundColor = UIColor.secondarySystemGroupedBackgroundColor;
+    cell.selectionStyle = UITableViewCellSelectionStyleNone;
+    UISwitch *toggle = [UISwitch new];
+    toggle.on = DYLikeEnabled((DYLikeActionType)index);
+    toggle.tag = (NSInteger)index;
+    toggle.accessibilityLabel = confirmTitles[index];
+    [toggle addTarget:self action:@selector(dyToggleChanged:) forControlEvents:UIControlEventValueChanged];
+    cell.accessoryView = toggle;
+    return cell;
+}
+
+- (void)dyToggleChanged:(UISwitch *)toggle {
+    if (toggle.tag < 0 || (NSUInteger)toggle.tag >= DYLikeActionCount) return;
+    NSArray<NSString *> *keys = @[DYLikeLikeEnabledKey, DYLikeFavoriteEnabledKey, DYLikeFollowEnabledKey,
+        DYLikeCommentLikeEnabledKey, DYLikeCommentDislikeEnabledKey];
+    [NSUserDefaults.standardUserDefaults setBool:toggle.isOn forKey:keys[(NSUInteger)toggle.tag]];
+}
+
+- (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
+    return @"开启后，抖音对应操作会先显示确认弹窗；设置修改后立即生效。";
+}
+
+@end
+
+@interface DYProfileTabsPanelViewController : UITableViewController
+@end
+
+@implementation DYProfileTabsPanelViewController
+
+- (instancetype)init {
+    return [super initWithStyle:UITableViewStyleInsetGrouped];
+}
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    self.title = @"我的页分页";
+    DYStylePanelNavigationBar(self);
+    self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone
+                                                                                           target:self
+                                                                                           action:@selector(dyDone)];
+    self.tableView.backgroundColor = UIColor.systemGroupedBackgroundColor;
+}
+
+- (void)dyDone {
+    [self dismissViewControllerAnimated:YES completion:nil];
+}
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    return 2;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    NSArray<NSString *> *tabTitles = @[@"移除喜欢", @"移除收藏"];
+    NSUInteger row = (NSUInteger)indexPath.row;
+    UITableViewCell *cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:nil];
+    cell.textLabel.text = tabTitles[row];
+    cell.textLabel.font = [UIFont preferredFontForTextStyle:UIFontTextStyleSubheadline];
+    cell.textLabel.adjustsFontForContentSizeCategory = YES;
+    cell.textLabel.textColor = UIColor.labelColor;
+    cell.backgroundColor = UIColor.secondarySystemGroupedBackgroundColor;
+    cell.selectionStyle = UITableViewCellSelectionStyleNone;
+    UISwitch *toggle = [UISwitch new];
+    toggle.on = [NSUserDefaults.standardUserDefaults boolForKey:(row == 0 ? DYProfileRemoveLikeTabKey : DYProfileRemoveFavoriteTabKey)];
+    toggle.tag = (NSInteger)row;
+    toggle.accessibilityLabel = tabTitles[row];
+    [toggle addTarget:self action:@selector(dyTabToggleChanged:) forControlEvents:UIControlEventValueChanged];
+    cell.accessoryView = toggle;
+    return cell;
+}
+
+- (void)dyTabToggleChanged:(UISwitch *)toggle {
+    NSString *key = toggle.tag == 0 ? DYProfileRemoveLikeTabKey : DYProfileRemoveFavoriteTabKey;
+    [NSUserDefaults.standardUserDefaults setBool:toggle.isOn forKey:key];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        DYProfileTabsRefresh();
+    });
+}
+
+- (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
+    return @"开启后，我的页不显示对应分页；关闭后恢复显示。也可以双击分页标题切换：作品→收藏、日常→喜欢。";
 }
 
 @end
@@ -291,9 +414,7 @@
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    if (section == 0) return DYLikeActionCount;
-    if (section == 1) return 2;
-    return 1; // 入口行，点开是独立弹窗页
+    return 1; // 每个分区一行入口，点开是独立弹窗页
 }
 
 - (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section {
@@ -321,9 +442,9 @@
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
-    if (section == 1) return @"开启后，我的页不显示对应分页；关闭后恢复显示。也可以双击分页标题切换：作品→收藏、日常→喜欢。";
+    if (section == 1) return @"点开设置要移除的分页。";
     if (section == 2) return @"点开可逐个移除分享面板的按钮并拖动排序；先打开一次分享面板，按钮会自动收录。";
-    return @"开启后，抖音对应操作会先显示确认弹窗；设置修改后立即生效。";
+    return @"点开设置各项二次确认。";
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
@@ -347,68 +468,54 @@
     }
 
     if (indexPath.section == 1) {
-        NSArray<NSString *> *tabTitles = @[@"移除喜欢", @"移除收藏"];
-        NSUInteger row = (NSUInteger)indexPath.row;
-        UITableViewCell *cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault
+        UITableViewCell *cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1
                                                         reuseIdentifier:nil];
-        cell.textLabel.text = tabTitles[row];
+        cell.textLabel.text = @"分页移除";
         cell.textLabel.font = [UIFont preferredFontForTextStyle:UIFontTextStyleSubheadline];
         cell.textLabel.adjustsFontForContentSizeCategory = YES;
         cell.textLabel.textColor = UIColor.labelColor;
         cell.backgroundColor = UIColor.secondarySystemGroupedBackgroundColor;
-        cell.selectionStyle = UITableViewCellSelectionStyleNone;
-
-        UISwitch *toggle = [UISwitch new];
-        toggle.on = [NSUserDefaults.standardUserDefaults boolForKey:(row == 0 ? DYProfileRemoveLikeTabKey : DYProfileRemoveFavoriteTabKey)];
-        toggle.tag = (NSInteger)row;
-        toggle.accessibilityLabel = tabTitles[row];
-        [toggle addTarget:self action:@selector(profileTabToggleChanged:) forControlEvents:UIControlEventValueChanged];
-        cell.accessoryView = toggle;
+        cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+        cell.selectionStyle = UITableViewCellSelectionStyleDefault;
+        NSUInteger removedTabs = 0;
+        if ([NSUserDefaults.standardUserDefaults boolForKey:DYProfileRemoveLikeTabKey]) removedTabs++;
+        if ([NSUserDefaults.standardUserDefaults boolForKey:DYProfileRemoveFavoriteTabKey]) removedTabs++;
+        cell.detailTextLabel.text = removedTabs ? [NSString stringWithFormat:@"已移除 %lu 项", (unsigned long)removedTabs] : @"未移除";
         return cell;
     }
 
-    static NSArray<NSString *> *titles;
-    static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{
-        titles = @[@"启用点赞二次确认", @"启用收藏二次确认", @"启用关注二次确认", @"启用评论点赞二次确认", @"启用评论点踩二次确认"];
-    });
-
-    NSUInteger index = (NSUInteger)indexPath.row;
-    UITableViewCell *cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault
+    // section 0 入口行
+    NSUInteger enabledCount = 0;
+    for (NSUInteger i = 0; i < DYLikeActionCount; i++) {
+        if (DYLikeEnabled((DYLikeActionType)i)) enabledCount++;
+    }
+    UITableViewCell *cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1
                                                     reuseIdentifier:nil];
-    cell.textLabel.text = titles[index];
+    cell.textLabel.text = @"二次确认项";
     cell.textLabel.font = [UIFont preferredFontForTextStyle:UIFontTextStyleSubheadline];
     cell.textLabel.adjustsFontForContentSizeCategory = YES;
     cell.textLabel.textColor = UIColor.labelColor;
     cell.backgroundColor = UIColor.secondarySystemGroupedBackgroundColor;
-    cell.selectionStyle = UITableViewCellSelectionStyleNone;
-
-    UISwitch *toggle = [UISwitch new];
-    toggle.on = DYLikeEnabled((DYLikeActionType)index);
-    toggle.tag = (NSInteger)index;
-    toggle.accessibilityLabel = titles[index];
-    [toggle addTarget:self action:@selector(toggleChanged:) forControlEvents:UIControlEventValueChanged];
-    cell.accessoryView = toggle;
+    cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+    cell.selectionStyle = UITableViewCellSelectionStyleDefault;
+    cell.detailTextLabel.text = enabledCount ? [NSString stringWithFormat:@"已启用 %lu 项", (unsigned long)enabledCount] : @"未启用";
     return cell;
-}
-
-- (void)toggleChanged:(UISwitch *)toggle {
-    if (toggle.tag < 0 || (NSUInteger)toggle.tag >= DYLikeActionCount) return;
-    NSArray<NSString *> *keys = @[DYLikeLikeEnabledKey, DYLikeFavoriteEnabledKey, DYLikeFollowEnabledKey,
-        DYLikeCommentLikeEnabledKey, DYLikeCommentDislikeEnabledKey];
-    [NSUserDefaults.standardUserDefaults setBool:toggle.isOn forKey:keys[(NSUInteger)toggle.tag]];
-}
-
-- (void)profileTabToggleChanged:(UISwitch *)toggle {
-    NSString *key = toggle.tag == 0 ? DYProfileRemoveLikeTabKey : DYProfileRemoveFavoriteTabKey;
-    [NSUserDefaults.standardUserDefaults setBool:toggle.isOn forKey:key];
-    dispatch_async(dispatch_get_main_queue(), ^{
-        DYProfileTabsRefresh();
-    });
 }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
+    if (indexPath.section == 0) {
+        DYConfirmPanelViewController *confirm = [DYConfirmPanelViewController new];
+        UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:confirm];
+        [self presentViewController:nav animated:YES completion:nil];
+        return;
+    }
+    if (indexPath.section == 1) {
+        DYProfileTabsPanelViewController *tabs = [DYProfileTabsPanelViewController new];
+        UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:tabs];
+        [self presentViewController:nav animated:YES completion:nil];
+        return;
+    }
     if (indexPath.section == 2) {
         DYSharePanelViewController *panel = [DYSharePanelViewController new];
         UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:panel];
