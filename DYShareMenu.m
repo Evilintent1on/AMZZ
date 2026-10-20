@@ -18,6 +18,7 @@
 
 static NSString *const DYShareMenuCatalogKey = @"DYShareMenuCatalog";
 static NSString *const DYShareMenuHidePrefix = @"DYShareMenuHide.";
+static NSString *const DYShareMenuOrderKey = @"DYShareMenuOrder";
 
 @protocol DYShareMenuFunction <NSObject>
 - (NSString *)shareType;
@@ -90,6 +91,42 @@ static void DYShareMenuRecord(NSArray<NSDictionary *> *entries) {
     }
 }
 
+NSArray<NSString *> *DYShareMenuOrder(void) {
+    id stored = [NSUserDefaults.standardUserDefaults objectForKey:DYShareMenuOrderKey];
+    if (![stored isKindOfClass:NSArray.class]) return @[];
+    NSMutableArray *order = [NSMutableArray array];
+    for (id itemID in stored) if (DYShareMenuValidID(itemID)) [order addObject:itemID];
+    return order;
+}
+
+void DYShareMenuSetOrder(NSArray<NSString *> *order) {
+    [NSUserDefaults.standardUserDefaults setObject:order forKey:DYShareMenuOrderKey];
+}
+
+// 同一行内按自定义顺序重排：列入顺序表的按名次在前，未列入的保持原相对顺序跟在后面；
+// 行里只要有元素拿不到标识（不是功能行）就不动这一行。
+static NSArray *DYShareMenuSortedLine(NSArray *kept) {
+    NSArray<NSString *> *order = DYShareMenuOrder();
+    if (!order.count || kept.count < 2) return kept;
+    NSMutableDictionary<NSString *, NSNumber *> *rank = [NSMutableDictionary dictionary];
+    [order enumerateObjectsUsingBlock:^(NSString *itemID, NSUInteger idx, BOOL *stop) {
+        rank[itemID] = @(idx);
+    }];
+    NSMutableArray *indexed = [NSMutableArray arrayWithCapacity:kept.count];
+    for (NSUInteger i = 0; i < kept.count; i++) {
+        NSString *itemID = DYShareMenuItemID(kept[i]);
+        if (!itemID) return kept;
+        [indexed addObject:@{ @"m": kept[i], @"r": rank[itemID] ?: @(NSIntegerMax), @"i": @(i) }];
+    }
+    [indexed sortUsingComparator:^NSComparisonResult(NSDictionary *a, NSDictionary *b) {
+        NSComparisonResult c = [a[@"r"] compare:b[@"r"]];
+        return c != NSOrderedSame ? c : [a[@"i"] compare:b[@"i"]];
+    }];
+    NSMutableArray *sorted = [NSMutableArray arrayWithCapacity:kept.count];
+    for (NSDictionary *entry in indexed) [sorted addObject:entry[@"m"]];
+    return sorted;
+}
+
 NSArray *DYShareMenuFilter(NSArray *lines) {
     if (![lines isKindOfClass:NSArray.class]) return lines;
     Class localizationClass = NSClassFromString(@"ALPLocalizationsManager");
@@ -116,11 +153,12 @@ NSArray *DYShareMenuFilter(NSArray *lines) {
             if (itemID && [NSUserDefaults.standardUserDefaults boolForKey:DYShareMenuHideKey(itemID)]) changed = YES;
             else [kept addObject:model];
         }
-        if (kept.count == [line count]) {
+        NSArray *sortedKept = DYShareMenuSortedLine(kept);
+        if (kept.count == [line count] && [sortedKept isEqualToArray:kept]) {
             [result addObject:line];
         } else {
             changed = YES;
-            if (kept.count) [result addObject:[kept copy]];
+            if (sortedKept.count) [result addObject:sortedKept];
         }
     }
     DYShareMenuRecord(entries);

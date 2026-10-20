@@ -4,6 +4,88 @@
 #import "../Hooks/DYShareMenu.h"
 #import <objc/runtime.h>
 
+@interface DYShareSortViewController : UITableViewController
+@end
+
+@implementation DYShareSortViewController {
+    NSMutableArray<NSDictionary *> *_entries;
+}
+
+- (instancetype)init {
+    self = [super initWithStyle:UITableViewStyleInsetGrouped];
+    if (self) {
+        NSArray<NSDictionary *> *catalog = DYShareMenuCatalog();
+        NSMutableArray<NSDictionary *> *entries = [NSMutableArray array];
+        NSMutableSet<NSString *> *used = [NSMutableSet set];
+        for (NSString *itemID in DYShareMenuOrder()) {
+            for (NSDictionary *entry in catalog) {
+                if ([entry[@"id"] isEqualToString:itemID]) {
+                    [entries addObject:entry];
+                    [used addObject:itemID];
+                    break;
+                }
+            }
+        }
+        for (NSDictionary *entry in catalog) {
+            if (![used containsObject:entry[@"id"]]) [entries addObject:entry];
+        }
+        _entries = entries;
+    }
+    return self;
+}
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    self.title = @"按钮排序";
+    self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone
+                                                                                           target:self
+                                                                                           action:@selector(dyDone)];
+    self.tableView.editing = YES;
+    self.tableView.backgroundColor = UIColor.systemGroupedBackgroundColor;
+}
+
+- (void)dyDone {
+    [self dismissViewControllerAnimated:YES completion:nil];
+}
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    return (NSInteger)_entries.count;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"dy.share.sort"];
+    if (!cell) cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:@"dy.share.sort"];
+    NSDictionary *entry = _entries[(NSUInteger)indexPath.row];
+    BOOL hiddenItem = [NSUserDefaults.standardUserDefaults boolForKey:DYShareMenuHideKey(entry[@"id"])];
+    cell.textLabel.text = entry[@"title"] ?: entry[@"id"];
+    cell.textLabel.font = [UIFont preferredFontForTextStyle:UIFontTextStyleSubheadline];
+    cell.textLabel.textColor = hiddenItem ? UIColor.secondaryLabelColor : UIColor.labelColor;
+    cell.detailTextLabel.text = hiddenItem ? @"已移除" : nil;
+    cell.backgroundColor = UIColor.secondarySystemGroupedBackgroundColor;
+    cell.selectionStyle = UITableViewCellSelectionStyleNone;
+    return cell;
+}
+
+- (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath { return YES; }
+- (UITableViewCellEditingStyle)tableView:(UITableView *)tableView editingStyleForRowAtIndexPath:(NSIndexPath *)indexPath { return UITableViewCellEditingStyleNone; }
+- (BOOL)tableView:(UITableView *)tableView shouldIndentWhileEditingRowAtIndexPath:(NSIndexPath *)indexPath { return NO; }
+- (BOOL)tableView:(UITableView *)tableView canMoveRowAtIndexPath:(NSIndexPath *)indexPath { return YES; }
+
+- (void)tableView:(UITableView *)tableView moveRowAtIndexPath:(NSIndexPath *)sourceIndexPath toIndexPath:(NSIndexPath *)destinationIndexPath {
+    NSDictionary *entry = _entries[(NSUInteger)sourceIndexPath.row];
+    [_entries removeObjectAtIndex:(NSUInteger)sourceIndexPath.row];
+    [_entries insertObject:entry atIndex:(NSUInteger)destinationIndexPath.row];
+    NSMutableArray<NSString *> *order = [NSMutableArray arrayWithCapacity:_entries.count];
+    for (NSDictionary *e in _entries) [order addObject:e[@"id"]];
+    DYShareMenuSetOrder(order);
+}
+
+- (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
+    return @"拖动右侧手柄调整顺序，下次打开分享面板生效。排序只在同一行内有效；已移除的按钮恢复显示后也按此顺序排列。";
+}
+
+@end
+
 @implementation DYLikeSettingsViewController {
     UIView *_amzzHeader;
     UIImageView *_amzzBackArrow;
@@ -174,7 +256,7 @@
     if (section == 0) return DYLikeActionCount;
     if (section == 1) return 2;
     NSUInteger catalogCount = DYShareMenuCatalog().count;
-    return catalogCount ? (NSInteger)catalogCount : 1;
+    return catalogCount ? (NSInteger)catalogCount + 1 : 1; // 第 0 行是「按钮排序」入口
 }
 
 - (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section {
@@ -203,7 +285,7 @@
 
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
     if (section == 1) return @"开启后，我的页不显示对应分页；关闭后恢复显示。也可以双击分页标题切换：作品→收藏、日常→喜欢。";
-    if (section == 2) return @"打开一次视频或图文的分享面板后，按钮会自动列在这里；开启的行会从分享面板移除，下次打开面板生效。";
+    if (section == 2) return @"打开一次视频或图文的分享面板后，按钮会自动列在这里；开启的行会从分享面板移除，下次打开面板生效。点第一行「按钮排序」可调整按钮在同一行内的顺序。";
     return @"开启后，抖音对应操作会先显示确认弹窗；设置修改后立即生效。";
 }
 
@@ -221,13 +303,20 @@
             cell.textLabel.textColor = UIColor.secondaryLabelColor;
             return cell;
         }
-        NSDictionary *entry = catalog[(NSUInteger)indexPath.row];
+        if (indexPath.row == 0) {
+            cell.textLabel.text = @"按钮排序";
+            cell.textLabel.textColor = UIColor.labelColor;
+            cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+            cell.selectionStyle = UITableViewCellSelectionStyleDefault;
+            return cell;
+        }
+        NSDictionary *entry = catalog[(NSUInteger)indexPath.row - 1];
         NSString *title = entry[@"title"] ?: entry[@"id"];
         cell.textLabel.text = [NSString stringWithFormat:@"移除「%@」", title];
         cell.textLabel.textColor = UIColor.labelColor;
         UISwitch *toggle = [UISwitch new];
         toggle.on = [NSUserDefaults.standardUserDefaults boolForKey:DYShareMenuHideKey(entry[@"id"])];
-        toggle.tag = indexPath.row;
+        toggle.tag = indexPath.row - 1;
         toggle.accessibilityLabel = cell.textLabel.text;
         [toggle addTarget:self action:@selector(shareMenuToggleChanged:) forControlEvents:UIControlEventValueChanged];
         cell.accessoryView = toggle;
@@ -304,6 +393,11 @@
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
+    if (indexPath.section == 2 && indexPath.row == 0 && DYShareMenuCatalog().count) {
+        DYShareSortViewController *sort = [DYShareSortViewController new];
+        UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:sort];
+        [self presentViewController:nav animated:YES completion:nil];
+    }
 }
 
 - (void)closeSettings {
