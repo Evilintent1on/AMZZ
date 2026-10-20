@@ -1,6 +1,7 @@
 #import "DYLikeSettings.h"
 #import "../Core/DYLikeCore.h"
 #import "../Hooks/DYProfileTabs.h"
+#import "../Hooks/DYShareMenu.h"
 #import <objc/runtime.h>
 
 @implementation DYLikeSettingsViewController {
@@ -166,17 +167,20 @@
 }
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
-    return 2;
+    return 3;
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    return section == 0 ? DYLikeActionCount : 2;
+    if (section == 0) return DYLikeActionCount;
+    if (section == 1) return 2;
+    NSUInteger catalogCount = DYShareMenuCatalog().count;
+    return catalogCount ? (NSInteger)catalogCount : 1;
 }
 
 - (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section {
     UIView *header = [[UIView alloc] init];
     UILabel *label = [[UILabel alloc] init];
-    label.text = section == 0 ? @"二次确认" : @"我的页分页";
+    label.text = section == 0 ? @"二次确认" : (section == 1 ? @"我的页分页" : @"分享面板精简");
     label.font = [UIFont systemFontOfSize:13];
     label.textColor = [UIColor secondaryLabelColor];
     label.translatesAutoresizingMaskIntoConstraints = NO;
@@ -199,10 +203,37 @@
 
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
     if (section == 1) return @"开启后，我的页不显示对应分页；关闭后恢复显示。也可以双击分页标题切换：作品→收藏、日常→喜欢。";
+    if (section == 2) return @"打开一次视频或图文的分享面板后，按钮会自动列在这里；开启的行会从分享面板移除，下次打开面板生效。";
     return @"开启后，抖音对应操作会先显示确认弹窗；设置修改后立即生效。";
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    if (indexPath.section == 2) {
+        NSArray<NSDictionary *> *catalog = DYShareMenuCatalog();
+        UITableViewCell *cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault
+                                                        reuseIdentifier:nil];
+        cell.textLabel.font = [UIFont preferredFontForTextStyle:UIFontTextStyleSubheadline];
+        cell.textLabel.adjustsFontForContentSizeCategory = YES;
+        cell.backgroundColor = UIColor.secondarySystemGroupedBackgroundColor;
+        cell.selectionStyle = UITableViewCellSelectionStyleNone;
+        if (!catalog.count) {
+            cell.textLabel.text = @"尚未收录按钮，先打开一次分享面板";
+            cell.textLabel.textColor = UIColor.secondaryLabelColor;
+            return cell;
+        }
+        NSDictionary *entry = catalog[(NSUInteger)indexPath.row];
+        NSString *title = entry[@"title"] ?: entry[@"id"];
+        cell.textLabel.text = [NSString stringWithFormat:@"移除「%@」", title];
+        cell.textLabel.textColor = UIColor.labelColor;
+        UISwitch *toggle = [UISwitch new];
+        toggle.on = [NSUserDefaults.standardUserDefaults boolForKey:DYShareMenuHideKey(entry[@"id"])];
+        toggle.tag = indexPath.row;
+        toggle.accessibilityLabel = cell.textLabel.text;
+        [toggle addTarget:self action:@selector(shareMenuToggleChanged:) forControlEvents:UIControlEventValueChanged];
+        cell.accessoryView = toggle;
+        return cell;
+    }
+
     if (indexPath.section == 1) {
         NSArray<NSString *> *tabTitles = @[@"移除喜欢", @"移除收藏"];
         NSUInteger row = (NSUInteger)indexPath.row;
@@ -254,6 +285,13 @@
     NSArray<NSString *> *keys = @[DYLikeLikeEnabledKey, DYLikeFavoriteEnabledKey, DYLikeFollowEnabledKey,
         DYLikeCommentLikeEnabledKey, DYLikeCommentDislikeEnabledKey];
     [NSUserDefaults.standardUserDefaults setBool:toggle.isOn forKey:keys[(NSUInteger)toggle.tag]];
+}
+
+- (void)shareMenuToggleChanged:(UISwitch *)toggle {
+    NSArray<NSDictionary *> *catalog = DYShareMenuCatalog();
+    if (toggle.tag < 0 || (NSUInteger)toggle.tag >= catalog.count) return;
+    NSString *itemID = catalog[(NSUInteger)toggle.tag][@"id"];
+    if (itemID) [NSUserDefaults.standardUserDefaults setBool:toggle.isOn forKey:DYShareMenuHideKey(itemID)];
 }
 
 - (void)profileTabToggleChanged:(UISwitch *)toggle {
