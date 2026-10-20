@@ -15,6 +15,147 @@ static void DYStylePanelNavigationBar(UIViewController *controller) {
     controller.navigationController.navigationBar.tintColor = UIColor.blackColor;
 }
 
+// 弹窗过渡：从底部平滑滑入（带淡遮罩）；下滑关闭全程跟手、松手平滑滑出，不再瞬间消失
+@interface DYPanelTransition : NSObject <UIViewControllerTransitioningDelegate, UIViewControllerAnimatedTransitioning, UIGestureRecognizerDelegate>
+@property (nonatomic, weak) UINavigationController *dyNav;
+@property (nonatomic, strong) UIPercentDrivenInteractiveTransition *dyInteraction;
+@property (nonatomic, strong) UIView *dyDimView;
+@property (nonatomic, assign) BOOL dyPresenting;
++ (instancetype)sharedTransition;
+- (void)dyHandlePan:(UIPanGestureRecognizer *)pan;
+@end
+
+@implementation DYPanelTransition
+
++ (instancetype)sharedTransition {
+    static DYPanelTransition *shared;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{ shared = [DYPanelTransition new]; });
+    return shared;
+}
+
+- (id<UIViewControllerAnimatedTransitioning>)animationControllerForPresentedController:(UIViewController *)presented presentingController:(UIViewController *)presenting sourceController:(UIViewController *)source {
+    self.dyPresenting = YES;
+    return self;
+}
+
+- (id<UIViewControllerAnimatedTransitioning>)animationControllerForDismissedController:(UIViewController *)dismissed {
+    self.dyPresenting = NO;
+    return self;
+}
+
+- (id<UIViewControllerInteractiveTransitioning>)interactionControllerForDismissal:(id<UIViewControllerAnimatedTransitioning>)animator {
+    return self.dyInteraction;
+}
+
+- (NSTimeInterval)transitionDuration:(id<UIViewControllerContextTransitioning>)transitionContext {
+    return 0.38;
+}
+
+- (void)animateTransition:(id<UIViewControllerContextTransitioning>)transitionContext {
+    UIView *container = transitionContext.containerView;
+    CGRect bounds = container.bounds;
+    CGRect cardFrame = CGRectMake(0, 54, bounds.size.width, bounds.size.height - 54);
+    if (self.dyPresenting) {
+        UIView *toView = [transitionContext viewForKey:UITransitionContextToViewKey];
+        UIView *dim = [[UIView alloc] initWithFrame:bounds];
+        dim.backgroundColor = UIColor.blackColor;
+        dim.alpha = 0;
+        [container addSubview:dim];
+        self.dyDimView = dim;
+        toView.frame = cardFrame;
+        toView.transform = CGAffineTransformMakeTranslation(0, cardFrame.size.height);
+        [container addSubview:toView];
+        [UIView animateWithDuration:0.38 delay:0 options:UIViewAnimationOptionCurveEaseOut animations:^{
+            toView.transform = CGAffineTransformIdentity;
+            dim.alpha = 0.4;
+        } completion:^(BOOL finished) {
+            BOOL cancelled = transitionContext.transitionWasCancelled;
+            if (cancelled) {
+                [toView removeFromSuperview];
+                [dim removeFromSuperview];
+                self.dyDimView = nil;
+            }
+            [transitionContext completeTransition:!cancelled];
+        }];
+    } else {
+        UIView *fromView = [transitionContext viewForKey:UITransitionContextFromViewKey];
+        UIView *dim = self.dyDimView;
+        [UIView animateWithDuration:0.38 delay:0 options:UIViewAnimationOptionCurveEaseInOut animations:^{
+            fromView.transform = CGAffineTransformMakeTranslation(0, cardFrame.size.height);
+            dim.alpha = 0;
+        } completion:^(BOOL finished) {
+            BOOL cancelled = transitionContext.transitionWasCancelled;
+            if (cancelled) {
+                fromView.transform = CGAffineTransformIdentity;
+                dim.alpha = 0.4;
+            } else {
+                [fromView removeFromSuperview];
+                [dim removeFromSuperview];
+                self.dyDimView = nil;
+            }
+            [transitionContext completeTransition:!cancelled];
+        }];
+    }
+}
+
+- (BOOL)gestureRecognizerShouldBegin:(UIPanGestureRecognizer *)pan {
+    CGPoint velocity = [pan velocityInView:pan.view];
+    if (velocity.y <= 0 || fabs(velocity.y) < fabs(velocity.x)) return NO;
+    UIViewController *top = self.dyNav.topViewController;
+    if ([top isKindOfClass:UITableViewController.class]) {
+        UIScrollView *table = ((UITableViewController *)top).tableView;
+        if (table.contentOffset.y > -table.adjustedContentInset.top + 1) return NO; // 还没滑到顶，先滚列表
+    }
+    return YES;
+}
+
+- (void)dyHandlePan:(UIPanGestureRecognizer *)pan {
+    CGFloat height = MAX(1.0, pan.view.bounds.size.height);
+    CGFloat progress = MIN(1.0, MAX(0.0, [pan translationInView:pan.view].y / height));
+    switch (pan.state) {
+        case UIGestureRecognizerStateBegan: {
+            self.dyInteraction = [UIPercentDrivenInteractiveTransition new];
+            [self.dyNav dismissViewControllerAnimated:YES completion:nil];
+            break;
+        }
+        case UIGestureRecognizerStateChanged: {
+            [self.dyInteraction updateInteractiveTransition:progress];
+            break;
+        }
+        case UIGestureRecognizerStateEnded:
+        case UIGestureRecognizerStateCancelled: {
+            CGFloat velocity = [pan velocityInView:pan.view].y;
+            if (pan.state == UIGestureRecognizerStateEnded && (progress > 0.3 || velocity > 550)) {
+                [self.dyInteraction finishInteractiveTransition];
+            } else {
+                [self.dyInteraction cancelInteractiveTransition];
+            }
+            self.dyInteraction = nil;
+            break;
+        }
+        default: break;
+    }
+}
+
+@end
+
+static void DYPresentPanelPage(UIViewController *presenter, UIViewController *root) {
+    UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:root];
+    DYPanelTransition *transition = DYPanelTransition.sharedTransition;
+    transition.dyNav = nav;
+    nav.transitioningDelegate = transition;
+    nav.modalPresentationStyle = UIModalPresentationOverFullScreen;
+    nav.view.layer.cornerRadius = 14;
+    nav.view.layer.maskedCorners = kCALayerMinXMinYCorner | kCALayerMaxXMinYCorner;
+    nav.view.layer.masksToBounds = YES;
+    UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:transition action:@selector(dyHandlePan:)];
+    pan.delegate = transition;
+    pan.cancelsTouchesInView = NO;
+    [nav.view addGestureRecognizer:pan];
+    [presenter presentViewController:nav animated:YES completion:nil];
+}
+
 @interface DYSharePanelViewController : UITableViewController
 @end
 
@@ -505,21 +646,15 @@ static void DYStylePanelNavigationBar(UIViewController *controller) {
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
     if (indexPath.section == 0) {
-        DYConfirmPanelViewController *confirm = [DYConfirmPanelViewController new];
-        UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:confirm];
-        [self presentViewController:nav animated:YES completion:nil];
+        DYPresentPanelPage(self, [DYConfirmPanelViewController new]);
         return;
     }
     if (indexPath.section == 1) {
-        DYProfileTabsPanelViewController *tabs = [DYProfileTabsPanelViewController new];
-        UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:tabs];
-        [self presentViewController:nav animated:YES completion:nil];
+        DYPresentPanelPage(self, [DYProfileTabsPanelViewController new]);
         return;
     }
     if (indexPath.section == 2) {
-        DYSharePanelViewController *panel = [DYSharePanelViewController new];
-        UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:panel];
-        [self presentViewController:nav animated:YES completion:nil];
+        DYPresentPanelPage(self, [DYSharePanelViewController new]);
     }
 }
 
