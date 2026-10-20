@@ -1,6 +1,7 @@
 #import "../Core/DYLikeCore.h"
 #import "../Settings/DYLikeSettings.h"
 #import "../UI/DYLikePrompt.h"
+#import "DYProfileTabs.h"
 #import <objc/runtime.h>
 #import <objc/message.h>
 #import <mach-o/dyld.h>
@@ -413,6 +414,7 @@ static void DYInstallHooks(void) {
     DYInstallFeedButtonHook();
     DYLikeInstallThemeHooks();
     DYLikeInstallSettingsHook();
+    DYProfileTabsInstall();
     if (added) NSLog(@"[DYSecondaryConfirmation] Installed %lu action hooks", (unsigned long)added);
 }
 
