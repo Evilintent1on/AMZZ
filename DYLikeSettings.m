@@ -48,12 +48,24 @@
     self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone
                                                                                            target:self
                                                                                            action:@selector(dyDone)];
-    self.tableView.editing = _entries.count > 0;
+    if (_entries.count) {
+        // 默认不是编辑模式：编辑模式下系统会藏掉开关、只剩拖动手柄，所以排序要手动进模式
+        self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"排序"
+                                                                                 style:UIBarButtonItemStylePlain
+                                                                                target:self
+                                                                                action:@selector(dyToggleSortMode)];
+    }
     self.tableView.backgroundColor = UIColor.systemGroupedBackgroundColor;
 }
 
 - (void)dyDone {
     [self dismissViewControllerAnimated:YES completion:nil];
+}
+
+- (void)dyToggleSortMode {
+    BOOL sorting = !self.tableView.editing;
+    [self.tableView setEditing:sorting animated:YES];
+    self.navigationItem.leftBarButtonItem.title = sorting ? @"完成排序" : @"排序";
 }
 
 - (void)dyShareToggle:(UISwitch *)toggle {
@@ -107,7 +119,7 @@
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
-    return @"开关打开的按钮会从分享面板移除；拖动右侧手柄调整顺序（只在同一行内有效）。下次打开分享面板生效。";
+    return @"开关打开的按钮会从分享面板移除；点左上角「排序」可拖动调整顺序（只在同一行内有效）。下次打开分享面板生效。";
 }
 
 @end
