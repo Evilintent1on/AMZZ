@@ -4,6 +4,17 @@
 #import "../Hooks/DYShareMenu.h"
 #import <objc/runtime.h>
 
+static void DYStylePanelNavigationBar(UIViewController *controller) {
+    // 抖音全局导航栏外观是白字，盖到弹窗上会看不清：给弹窗导航栏单独指定浅底黑字
+    UINavigationBarAppearance *barAppearance = [UINavigationBarAppearance new];
+    [barAppearance configureWithOpaqueBackground];
+    barAppearance.backgroundColor = UIColor.systemBackgroundColor;
+    barAppearance.titleTextAttributes = @{NSForegroundColorAttributeName: UIColor.blackColor};
+    controller.navigationController.navigationBar.standardAppearance = barAppearance;
+    controller.navigationController.navigationBar.scrollEdgeAppearance = barAppearance;
+    controller.navigationController.navigationBar.tintColor = UIColor.blackColor;
+}
+
 @interface DYSharePanelViewController : UITableViewController
 @end
 
@@ -116,17 +127,6 @@
 }
 
 @end
-
-static void DYStylePanelNavigationBar(UIViewController *controller) {
-    // 抖音全局导航栏外观是白字，盖到弹窗上会看不清：给弹窗导航栏单独指定浅底黑字
-    UINavigationBarAppearance *barAppearance = [UINavigationBarAppearance new];
-    [barAppearance configureWithOpaqueBackground];
-    barAppearance.backgroundColor = UIColor.systemBackgroundColor;
-    barAppearance.titleTextAttributes = @{NSForegroundColorAttributeName: UIColor.blackColor};
-    controller.navigationController.navigationBar.standardAppearance = barAppearance;
-    controller.navigationController.navigationBar.scrollEdgeAppearance = barAppearance;
-    controller.navigationController.navigationBar.tintColor = UIColor.blackColor;
-}
 
 @interface DYConfirmPanelViewController : UITableViewController
 @end
