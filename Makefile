@@ -22,6 +22,7 @@ TWEAK_NAME = DYLike
 DYLike_FILES = Sources/Hooks/DYLikeHooks.m \
 	Sources/Hooks/DYProfileTabs.m \
 	Sources/Hooks/DYShareMenu.m \
+	Sources/Hooks/DYGlassTabBar.m \
 	Sources/Core/DYLikeCore.m \
 	Sources/UI/DYLikePrompt.m \
 	Sources/Settings/DYLikeSettings.m

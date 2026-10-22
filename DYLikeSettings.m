@@ -2,6 +2,7 @@
 #import "../Core/DYLikeCore.h"
 #import "../Hooks/DYProfileTabs.h"
 #import "../Hooks/DYShareMenu.h"
+#import "../Hooks/DYGlassTabBar.h"
 #import <objc/runtime.h>
 
 static void DYStylePanelNavigationBar(UIViewController *controller) {
@@ -413,7 +414,7 @@ static void DYStylePanelNavigationBar(UIViewController *controller) {
 }
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
-    return 3;
+    return 4;
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
@@ -423,7 +424,7 @@ static void DYStylePanelNavigationBar(UIViewController *controller) {
 - (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section {
     UIView *header = [[UIView alloc] init];
     UILabel *label = [[UILabel alloc] init];
-    label.text = section == 0 ? @"二次确认" : (section == 1 ? @"我的页分页" : @"分享面板精简");
+    label.text = section == 0 ? @"二次确认" : (section == 1 ? @"我的页分页" : (section == 2 ? @"分享面板精简" : @"底栏"));
     label.font = [UIFont systemFontOfSize:13];
     label.textColor = [UIColor secondaryLabelColor];
     label.translatesAutoresizingMaskIntoConstraints = NO;
@@ -447,6 +448,7 @@ static void DYStylePanelNavigationBar(UIViewController *controller) {
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
     if (section == 1) return @"点开设置要移除的分页。";
     if (section == 2) return @"点开可逐个移除分享面板的按钮并拖动排序；先打开一次分享面板，按钮会自动收录。";
+    if (section == 3) return @"开启后底栏变为一整条液态玻璃，长度固定，不随按钮多少变化。";
     return @"点开设置各项二次确认。";
 }
 
@@ -488,6 +490,23 @@ static void DYStylePanelNavigationBar(UIViewController *controller) {
         return cell;
     }
 
+    if (indexPath.section == 3) {
+        UITableViewCell *cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault
+                                                        reuseIdentifier:nil];
+        cell.textLabel.text = @"液态玻璃底栏";
+        cell.textLabel.font = [UIFont preferredFontForTextStyle:UIFontTextStyleSubheadline];
+        cell.textLabel.adjustsFontForContentSizeCategory = YES;
+        cell.textLabel.textColor = UIColor.labelColor;
+        cell.backgroundColor = UIColor.secondarySystemGroupedBackgroundColor;
+        cell.selectionStyle = UITableViewCellSelectionStyleNone;
+        UISwitch *toggle = [UISwitch new];
+        toggle.on = [NSUserDefaults.standardUserDefaults boolForKey:DYGlassTabBarEnabledKey];
+        toggle.accessibilityLabel = @"液态玻璃底栏";
+        [toggle addTarget:self action:@selector(dyGlassToggleChanged:) forControlEvents:UIControlEventValueChanged];
+        cell.accessoryView = toggle;
+        return cell;
+    }
+
     // section 0 入口行
     NSUInteger enabledCount = 0;
     for (NSUInteger i = 0; i < DYLikeActionCount; i++) {
@@ -504,6 +523,10 @@ static void DYStylePanelNavigationBar(UIViewController *controller) {
     cell.selectionStyle = UITableViewCellSelectionStyleDefault;
     cell.detailTextLabel.text = enabledCount ? [NSString stringWithFormat:@"已启用 %lu 项", (unsigned long)enabledCount] : @"未启用";
     return cell;
+}
+
+- (void)dyGlassToggleChanged:(UISwitch *)toggle {
+    [NSUserDefaults.standardUserDefaults setBool:toggle.isOn forKey:DYGlassTabBarEnabledKey];
 }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
